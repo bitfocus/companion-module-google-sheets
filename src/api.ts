@@ -207,6 +207,7 @@ export class API {
 					return
 				})
 				.catch((err) => {
+					this.instance.log('debug', `getSheet err: ${err.message}`)
 					if (err.message.includes('429')) this.rateLimit.incrementRequest('exceeded')
 					return
 				})
@@ -233,6 +234,7 @@ export class API {
 					this.instance.checkFeedbacks('cellValue')
 				})
 				.catch((err) => {
+					this.instance.log('debug', `getSheetValues err: ${err.message}`)
 					if (err.message.includes('429')) this.rateLimit.incrementRequest('exceeded')
 				})
 		}

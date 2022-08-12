@@ -75,6 +75,7 @@ export class Variables {
 	 */
 	public readonly updateVariables = (): void => {
 		const newVariables: InstanceVariables = new Map()
+		let sheetCount = 0
 
 		newVariables.set(
 			'read_requests',
@@ -98,6 +99,7 @@ export class Variables {
 			})
 
 			spreadsheet.valueRanges.forEach((valueRange: any) => {
+				sheetCount++
 				const sheetName = valueRange.range.split('!')[0]
 				const sheetData = spreadsheet.sheets.find(
 					(sheet: any) => sheet.properties.title === sheetName || `'${sheet.properties.title}'` === sheetName
@@ -135,6 +137,8 @@ export class Variables {
 			})
 		})
 
+		this.instance.log('debug', `Updating variables for ${sheetCount} sheets, from ${this.instance.data.sheetValues.size} Spreadsheets`)
+		
 		this.set(newVariables)
 		this.updateDefinitions()
 	}
