@@ -1,4 +1,4 @@
-import { CompanionInstanceHTTPRequest, CompanionInstanceHTTPResponse } from '../../../instance_skel_types'
+import { CompanionHTTPRequest, CompanionHTTPResponse } from '@companion-module/base'
 import GoogleSheetsInstance from './index'
 import { columnIndexToLetter } from './utils'
 
@@ -22,7 +22,7 @@ interface Spreadsheets {
  * @returns HTTP Request
  * @description Creates a basic HTTP request to be used internally to call the HTTP handler functions
  */
-export const defaultHTTPRequest = (): CompanionInstanceHTTPRequest => {
+export const defaultHTTPRequest = (): CompanionHTTPRequest => {
 	return { method: 'GET', path: '', headers: {}, baseUrl: '', hostname: '', ip: '', originalUrl: '', query: {} }
 }
 
@@ -34,9 +34,9 @@ export const defaultHTTPRequest = (): CompanionInstanceHTTPRequest => {
  */
 export const httpHandler = async (
 	instance: GoogleSheetsInstance,
-	request: CompanionInstanceHTTPRequest
-): Promise<CompanionInstanceHTTPResponse> => {
-	const response: CompanionInstanceHTTPResponse = {
+	request: CompanionHTTPRequest
+): Promise<CompanionHTTPResponse> => {
+	const response: CompanionHTTPResponse = {
 		status: 404,
 		headers: {
 			'Content-Type': 'application/json',
@@ -96,7 +96,7 @@ export const httpHandler = async (
 				sheets:
 					value.sheets.map(
 						(sheet: any) =>
-							`${request.headers.host}${request.baseUrl}/spreadsheet?id=${key}&sheet=${sheet.properties.title}`
+							`http://${request.headers.host}${request.baseUrl}/spreadsheet?id=${key}&sheet=${sheet.properties.title}`
 					) || [],
 			})
 		}

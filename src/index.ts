@@ -1,14 +1,13 @@
-import instance_skel = require('../../../instance_skel')
 import {
-	CompanionActions,
-	CompanionConfigField,
-	CompanionFeedbacks,
-	CompanionSystem,
-	CompanionPreset,
-	CompanionStaticUpgradeScript,
-	CompanionInstanceHTTPRequest,
-	CompanionInstanceHTTPResponse,
-} from '../../../instance_skel_types'
+	InstanceBase,
+	runEntrypoint,
+	CompanionActionDefinitions,
+	CompanionFeedbackDefinitions,
+	CompanionHTTPRequest,
+	CompanionHTTPResponse,
+	SomeCompanionConfigField,
+} from '@companion-module/base'
+
 import { getActions } from './actions'
 import { API } from './api'
 import { Config, getConfigFields } from './config'
@@ -18,41 +17,67 @@ import { getPresets } from './presets'
 import { getUpgrades } from './upgrade'
 import { Variables } from './variables'
 
+
 /**
  * Companion instance class for Google Sheets API
  */
-class GoogleSheetsInstance extends instance_skel<Config> {
-	constructor(system: CompanionSystem, id: string, config: Config) {
-		super(system, id, config)
-		this.config = config
-		this.api = new API(this)
-		this.variables = new Variables(this)
-	}
-
+class GoogleSheetsInstance extends InstanceBase<Config> {
 	public readonly api
 	public destroying = false
 	public readonly variables
+	public config: Config = {
+		clientID: '',
+		clientSecret: '',
+		redirectURI: '',
+		code: '',
+		sheetIDs: '',
+		pollInterval: 1.5,
+	}
 	public data = {
 		sheetData: new Map<string, any>(),
 		sheetValues: new Map<string, any>(),
 	}
 
-	static GetUpgradeScripts(): CompanionStaticUpgradeScript[] {
-		return getUpgrades()
+	constructor(internal: unknown) {
+		super(internal)
+		this.api = new API(this)
+		this.variables = new Variables(this)
+		this.instanceOptions.disableVariableValidation = true
 	}
 
 	/**
 	 * @description triggered on instance being enabled
 	 */
-	public init(): void {
+	public async init(config: Config): Promise<void> {
+		this.config = config
 		this.api.auth()
 		this.updateInstance()
+
+		await this.configUpdated(config)
+		this.log(
+			'info',
+			'Companion 3 makes some changes to Instance Variables, and limits certain symbols being used, such as !, so please check your variables are working and look at the examples showing how to reference A1 variiable in each sheet'
+		)
+	}
+	
+	/**
+	 * @param config new configuration data
+	 * @description triggered every time the config for this instance is saved
+	 */
+	public async configUpdated(config: Config): Promise<void> {
+		this.config = config
+		this.api.auth()
+		if (this.api.pollAPIInterval) clearTimeout(this.api.pollAPIInterval)
+		this.api.updatePollInterval()
+
+		this.updateInstance()
+		return
 	}
 
 	/**
 	 * @description close connections and stop timers/intervals
 	 */
-	public readonly destroy = (): void => {
+	public async destroy(): Promise<void> {
 		this.log('debug', `Instance destroyed: ${this.id}`)
 		this.destroying = true
 		if (this.api.pollAPIInterval) clearTimeout(this.api.pollAPIInterval)
@@ -63,34 +88,21 @@ class GoogleSheetsInstance extends instance_skel<Config> {
 	 * @returns config options
 	 * @description generates the config options available for this instance
 	 */
-	public readonly config_fields = (): CompanionConfigField[] => {
+	public getConfigFields(): SomeCompanionConfigField[] {
 		return getConfigFields()
 	}
 
-	/**
-	 * @param config new configuration data
-	 * @description triggered every time the config for this instance is saved
-	 */
-	public async updateConfig(config: Config): Promise<void> {
-		this.config = config
-		this.api.auth()
-		if (this.api.pollAPIInterval) clearTimeout(this.api.pollAPIInterval)
-		this.api.updatePollInterval()
-
-		this.updateInstance()
-	}
 
 	/**
 	 * @description sets channels, token, actions, and feedbacks available for this instance
 	 */
 	public async updateInstance(): Promise<void> {
-		// Cast actions and feedbacks from GoogleSheets types to Companion types
-		const actions = getActions(this) as CompanionActions
-		const feedbacks = getFeedbacks(this) as CompanionFeedbacks
+		const actions = getActions(this) as CompanionActionDefinitions
+		const feedbacks = getFeedbacks(this) as CompanionFeedbackDefinitions
 
-		this.setActions(actions)
+		this.setActionDefinitions(actions)
 		this.setFeedbackDefinitions(feedbacks)
-		this.setPresetDefinitions(getPresets(this) as unknown as CompanionPreset[])
+		this.setPresetDefinitions(getPresets(this))
 		this.variables.updateVariables()
 	}
 
@@ -98,9 +110,11 @@ class GoogleSheetsInstance extends instance_skel<Config> {
 	 * @param request HTTP request from Companion
 	 * @returns HTTP response
 	 */
-	public handleHttpRequest(request: CompanionInstanceHTTPRequest): Promise<CompanionInstanceHTTPResponse> {
+	public handleHttpRequest(request: CompanionHTTPRequest): Promise<CompanionHTTPResponse> {
 		return httpHandler(this, request)
 	}
 }
 
 export = GoogleSheetsInstance
+
+runEntrypoint(GoogleSheetsInstance, getUpgrades())

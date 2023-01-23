@@ -2,6 +2,7 @@ import got from 'got-cjs'
 import open from 'open'
 import GoogleSheetsInstance from './'
 import { cellToIndex } from './utils'
+import { InstanceStatus } from '@companion-module/base'
 
 interface RateLimit {
 	backoff: number
@@ -68,7 +69,8 @@ export class API {
 	 * @description Attempts to authenticate with Google OAuth
 	 */
 	public auth = async (): Promise<boolean> => {
-		this.instance.status(this.instance.STATUS_WARNING, 'Authenticating')
+		this.instance.updateStatus(InstanceStatus.Connecting, 'Authenticating')
+		
 		if (await this.refreshToken()) return true
 		if (await this.codeExchange()) return true
 
@@ -80,7 +82,6 @@ export class API {
 			this.instance.log('debug', 'Opening OAuth URL')
 		}
 
-		this.instance.status(this.instance.STATUS_WARNING, 'Auth Failed')
 		return false
 	}
 
@@ -101,22 +102,24 @@ export class API {
 		return got
 			.post('https://oauth2.googleapis.com/token', { searchParams, responseType: 'json' })
 			.then((res: any) => {
-				this.instance.log('debug', `Exchaned code - ${res.body}`)
-				this.instance.status(this.instance.STATUS_OK)
+				this.instance.log('debug', `Exchaned code - ${JSON.stringify(res.body)}`)
+				this.instance.updateStatus(InstanceStatus.Ok)
 
 				this.instance.config.accessToken = res.body.access_token
 				this.instance.config.refreshToken = res.body.refresh_token
 				this.ready = true
-				this.instance.saveConfig()
+				this.instance.saveConfig({
+					...this.instance.config,
+					accessToken: res.body.access_token,
+					refreshToken: res.body.refresh_token,
+				})
 
 				return true
 			})
 			.catch((err) => {
-				this.instance.log('error', `Error exchanging code - ${err.message}`)
-				this.instance.status(this.instance.STATUS_ERROR)
+				this.instance.updateStatus(InstanceStatus.UnknownError, `Error exchanging code - ${err.message}`)
 
-				this.instance.config.code = ''
-				this.instance.saveConfig()
+				this.instance.saveConfig({ ...this.instance.config, code: '' })
 
 				return false
 			})
@@ -140,11 +143,11 @@ export class API {
 			.post(`https://oauth2.googleapis.com/token`, { searchParams, responseType: 'json' })
 			.then((res: any) => {
 				this.instance.log('debug', `Token Refreshed - ${JSON.stringify(res.body)}`)
-				this.instance.status(this.instance.STATUS_OK)
+				this.instance.updateStatus(InstanceStatus.Ok)
 
 				this.instance.config.accessToken = res.body.access_token
 				this.ready = true
-				this.instance.saveConfig()
+				this.instance.saveConfig(this.instance.config)
 				this.pollAPI()
 
 				return true
@@ -158,15 +161,11 @@ export class API {
 	/**
 	 * @param sheetID Spreadsheet ID
 	 * @param cell Sheet!A1 notation
-	 * @returns
+	 * @returns value of the cell or null
 	 */
-	public parseCellValue = (sheetID: string, cell: string): string | null => {
-		let cellID = ''
+	public parseCellValue = async (sheetID: string, cell: string): Promise<string | null> => {
+		const cellID = (await this.instance.parseVariablesInString(cell)) || ''
 		const spreadsheet = this.instance.data.sheetValues.get(sheetID)
-
-		this.instance.parseVariables(cell, (data) => {
-			cellID = data || ''
-		})
 
 		if (!spreadsheet || cellID === '') return null
 

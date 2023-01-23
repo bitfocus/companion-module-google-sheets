@@ -1,4 +1,4 @@
-import { SomeCompanionConfigField } from '../../../instance_skel_types'
+import { SomeCompanionConfigField } from '@companion-module/base'
 
 export interface Config {
 	//
@@ -16,14 +16,15 @@ export interface Config {
 export const getConfigFields = (): SomeCompanionConfigField[] => {
 	return [
 		{
-			type: 'text',
+			type: 'static-text',
 			id: 'info',
 			width: 12,
 			label: 'Information',
 			value: `This module is currently in early beta, and requires creating an App in Googles Cloud Platform to gain access to read/writing to Sheets.
 				<br /><br />
-        1. Go to <a href="https://console.cloud.google.com/apis/credentials" target="_blank">https://console.cloud.google.com/apis/credentials</a>, click 'Create Credentials', and select 'OAuth client ID',
-				(you may need to create a project if you have not done so previously).
+				Prerequisite: On the <a href="https://console.cloud.google.com/home/dashboard" target="_blank">Google Cloud Console</a> Create a Project, and in the APIs and services > Enabled APIs and servers, make sure you enable the Google Sheets API
+				<br/>
+        1. Go to <a href="https://console.cloud.google.com/apis/credentials" target="_blank">https://console.cloud.google.com/apis/credentials</a>, click 'Create Credentials', and select 'OAuth client ID'
 				<br />
         2. Select 'Web Application' as the Application Type, and give the app a name.
         <br />
@@ -70,7 +71,7 @@ export const getConfigFields = (): SomeCompanionConfigField[] => {
 			default: '',
 		},
 		{
-			type: 'text',
+			type: 'static-text',
 			id: 'pollIntervalText',
 			width: 12,
 			label: 'Polling Interval Info',

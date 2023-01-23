@@ -1,12 +1,13 @@
 import GoogleSheetsInstance from './index'
 import {
-	CompanionFeedbackEvent,
-	SomeCompanionInputField,
-	CompanionBankRequiredProps,
-	CompanionBankAdditionalStyleProps,
-	CompanionFeedbackEventInfo,
-	CompanionBankPNG,
-} from '../../../instance_skel_types'
+	combineRgb,
+	CompanionAdvancedFeedbackResult,
+	CompanionFeedbackButtonStyleResult,
+	CompanionFeedbackAdvancedEvent,
+	CompanionFeedbackBooleanEvent,
+	SomeCompanionFeedbackInputField,
+	CompanionFeedbackContext 
+} from '@companion-module/base'
 
 export interface GoogleSheetsFeedbacks {
 	cellValue: GoogleSheetsFeedback<CellValueCallback>
@@ -16,7 +17,7 @@ export interface GoogleSheetsFeedbacks {
 }
 
 interface CellValueCallback {
-	type: 'cellValue'
+	feedbackId: 'cellValue'
 	options: Readonly<{
 		spreadsheet: string
 		cell: string
@@ -29,40 +30,36 @@ interface CellValueCallback {
 export type FeedbackCallbacks = CellValueCallback
 
 // Force options to have a default to prevent sending undefined values
-type InputFieldWithDefault = Exclude<SomeCompanionInputField, 'default'> & { default: string | number | boolean | null }
+type InputFieldWithDefault = Exclude<SomeCompanionFeedbackInputField, 'default'> & {
+	default: string | number | boolean | null
+}
 
 // GoogleSheets Boolean and Advanced feedback types
 interface GoogleSheetsFeedbackBoolean<T> {
 	type: 'boolean'
-	label: string
+	name: string
 	description: string
-	style: Partial<CompanionBankRequiredProps & CompanionBankAdditionalStyleProps>
+	style: Partial<CompanionFeedbackButtonStyleResult>
 	options: InputFieldWithDefault[]
-	callback?: (
-		feedback: Readonly<Omit<CompanionFeedbackEvent, 'options' | 'type'> & T>,
-		bank: Readonly<CompanionBankPNG | null>,
-		info: Readonly<CompanionFeedbackEventInfo | null>
-	) => boolean
-	subscribe?: (feedback: Readonly<Omit<CompanionFeedbackEvent, 'options' | 'type'> & T>) => boolean
-	unsubscribe?: (feedback: Readonly<Omit<CompanionFeedbackEvent, 'options' | 'type'> & T>) => boolean
+	callback: (feedback: Readonly<Omit<CompanionFeedbackBooleanEvent, 'options' | 'type'> & T>, context: CompanionFeedbackContext) => boolean | Promise<boolean>
+	subscribe?: (feedback: Readonly<Omit<CompanionFeedbackBooleanEvent, 'options' | 'type'> & T>) => boolean
+	unsubscribe?: (feedback: Readonly<Omit<CompanionFeedbackBooleanEvent, 'options' | 'type'> & T>) => boolean
 }
 
 interface GoogleSheetsFeedbackAdvanced<T> {
 	type: 'advanced'
-	label: string
+	name: string
 	description: string
 	options: InputFieldWithDefault[]
-	callback?: (
-		feedback: Readonly<Omit<CompanionFeedbackEvent, 'options' | 'type'> & T>,
-		bank: Readonly<CompanionBankPNG | null>,
-		info: Readonly<CompanionFeedbackEventInfo | null>
-	) => Partial<CompanionBankRequiredProps & CompanionBankAdditionalStyleProps> | void
+	callback: (
+		feedback: Readonly<Omit<CompanionFeedbackAdvancedEvent, 'options' | 'type'> & T>, context: CompanionFeedbackContext
+	) => CompanionAdvancedFeedbackResult
 	subscribe?: (
-		feedback: Readonly<Omit<CompanionFeedbackEvent, 'options' | 'type'> & T>
-	) => Partial<CompanionBankRequiredProps & CompanionBankAdditionalStyleProps> | void
+		feedback: Readonly<Omit<CompanionFeedbackAdvancedEvent, 'options' | 'type'> & T>
+	) => CompanionAdvancedFeedbackResult
 	unsubscribe?: (
-		feedback: Readonly<Omit<CompanionFeedbackEvent, 'options' | 'type'> & T>
-	) => Partial<CompanionBankRequiredProps & CompanionBankAdditionalStyleProps> | void
+		feedback: Readonly<Omit<CompanionFeedbackAdvancedEvent, 'options' | 'type'> & T>
+	) => CompanionAdvancedFeedbackResult
 }
 
 export type GoogleSheetsFeedback<T> = GoogleSheetsFeedbackBoolean<T> | GoogleSheetsFeedbackAdvanced<T>
@@ -71,13 +68,12 @@ export function getFeedbacks(instance: GoogleSheetsInstance): GoogleSheetsFeedba
 	return {
 		cellValue: {
 			type: 'boolean',
-			label: 'Cell Value',
+			name: 'Cell Value',
 			description: '',
 			options: [
 				{
 					type: 'dropdown',
 					label: 'Spreadsheet',
-					tooltip: 'Type of cell adjustment',
 					id: 'spreadsheet',
 					default: '',
 					choices: [
@@ -115,10 +111,13 @@ export function getFeedbacks(instance: GoogleSheetsInstance): GoogleSheetsFeedba
 				},
 			],
 			style: {
-				bgcolor: instance.rgb(255, 0, 0),
+				bgcolor: combineRgb(255, 0, 0),
 			},
 			callback: (feedback) => {
-				const cellValue = instance.api.parseCellValue(feedback.options.spreadsheet, feedback.options.cell)
+				//const cellValue = instance.api.parseCellValue(feedback.options.spreadsheet, feedback.options.cell)
+
+				const cellValue = feedback.options.cell
+
 				if (cellValue === null) return false
 
 				if (feedback.options.comparison === 'eq') {
@@ -135,6 +134,6 @@ export function getFeedbacks(instance: GoogleSheetsInstance): GoogleSheetsFeedba
 
 				return false
 			},
-		},
+		}
 	}
 }

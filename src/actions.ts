@@ -1,4 +1,4 @@
-import { CompanionActionEventInfo, CompanionActionEvent, SomeCompanionInputField } from '../../../instance_skel_types'
+import { CompanionActionEvent, SomeCompanionActionInputField } from '@companion-module/base'
 import GoogleSheetsInstance from './index'
 
 export interface GoogleSheetsActions {
@@ -9,7 +9,7 @@ export interface GoogleSheetsActions {
 }
 
 interface AdjustCellCallback {
-	action: 'adjustCell'
+	actionId: 'adjustCell'
 	options: Readonly<{
 		type: 'Set' | 'Increase' | 'Decrease'
 		spreadsheet: string
@@ -21,17 +21,16 @@ interface AdjustCellCallback {
 export type ActionCallbacks = ''
 
 // Force options to have a default to prevent sending undefined values
-type InputFieldWithDefault = Exclude<SomeCompanionInputField, 'default'> & { default: string | number | boolean | null }
+type InputFieldWithDefault = Exclude<SomeCompanionActionInputField, 'default'> & {
+	default: string | number | boolean | null
+}
 
 // Actions specific to GoogleSheets
 export interface GoogleSheetsAction<T> {
-	label: string
+	name: string
 	description?: string
 	options: InputFieldWithDefault[]
-	callback: (
-		action: Readonly<Omit<CompanionActionEvent, 'options' | 'id'> & T>,
-		info: Readonly<CompanionActionEventInfo | null>
-	) => void
+	callback: (action: Readonly<Omit<CompanionActionEvent, 'options' | 'id'> & T>) => void
 	subscribe?: (action: Readonly<Omit<CompanionActionEvent, 'options' | 'id'> & T>) => void
 	unsubscribe?: (action: Readonly<Omit<CompanionActionEvent, 'options' | 'id'> & T>) => void
 }
@@ -39,7 +38,7 @@ export interface GoogleSheetsAction<T> {
 export function getActions(instance: GoogleSheetsInstance): GoogleSheetsActions {
 	return {
 		adjustCell: {
-			label: 'Adjust Cell',
+			name: 'Adjust Cell',
 			options: [
 				{
 					type: 'dropdown',
@@ -89,7 +88,7 @@ export function getActions(instance: GoogleSheetsInstance): GoogleSheetsActions 
 				if (action.options.type === 'Set') {
 					instance.api.adjustCell(action.options.spreadsheet, action.options.cell, newValue.toString())
 				} else {
-					const cellValue = instance.api.parseCellValue(action.options.spreadsheet, action.options.cell)
+					const cellValue = await instance.api.parseCellValue(action.options.spreadsheet, action.options.cell)
 					if (cellValue === null) return
 
 					if (action.options.type === 'Increase') {

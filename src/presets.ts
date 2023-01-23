@@ -1,20 +1,21 @@
 import GoogleSheetsInstance from './index'
 import { ActionCallbacks } from './actions'
 import { FeedbackCallbacks } from './feedback'
-import { CompanionAlignment } from '../../../instance_skel_types'
+import { CompanionAlignment, CompanionButtonPresetOptions, CompanionPresetDefinitions } from '@companion-module/base'
 
 type PresetCategory = ''
 
 export interface GoogleSheetPreset {
+	type: 'button'
 	category: PresetCategory
-	label: string
-	bank: {
+	name: string
+	options?: CompanionButtonPresetOptions
+	style: {
 		alignment?: CompanionAlignment
 		bgcolor: number
 		color: number
 		pngalignment?: CompanionAlignment
 		size: 'auto' | '7' | '14' | '18' | '24' | '30' | '44'
-		style: 'text'
 		text: string
 	}
 	actions: ActionCallbacks[]
@@ -22,8 +23,8 @@ export interface GoogleSheetPreset {
 	feedbacks: FeedbackCallbacks[]
 }
 
-export function getPresets(_instance: GoogleSheetsInstance): GoogleSheetPreset[] {
+export function getPresets(_instance: GoogleSheetsInstance): CompanionPresetDefinitions {
 	const presets: GoogleSheetPreset[] = []
 
-	return presets
+	return presets as unknown as CompanionPresetDefinitions
 }

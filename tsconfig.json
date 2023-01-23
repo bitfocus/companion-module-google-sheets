@@ -29,7 +29,8 @@
     "lib": ["es6", "es2019"],
     "types": ["node"],
     "typeRoots": ["./node_modules/@types", "./types"],
-    "esModuleInterop": true
+    "esModuleInterop": true,
+    "skipLibCheck": true
   },
   "include": ["src/*.ts"],
   "compileOnSave": false,
