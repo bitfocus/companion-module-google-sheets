@@ -11,6 +11,10 @@ If this module, or the others I work on such as vMix, Twitch, Discord, Google Sh
 considering supporting the continued development of these modules by sponsoring me on GitHub https://github.com/sponsors/thedist/
 
 # Recent Patches
+**V1.0.1**
+- Fixed an issue with variable updating
+
+
 **V1.0.0**
 - Updated module for Companion 3
 
