@@ -75,7 +75,6 @@ export class Variables {
 							`${spreadsheet.properties.title}_${sheetName}!${columnIndexToLetter(column)}${row + 1}`,
 							data
 						)
-						if (sheetName === 'Controller' && row === 0 && column === 0) console.log(`Controller A1:${data}`)
 					}
 				}
 			})
