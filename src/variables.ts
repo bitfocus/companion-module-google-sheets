@@ -75,6 +75,7 @@ export class Variables {
 							`${spreadsheet.properties.title}_${sheetName}!${columnIndexToLetter(column)}${row + 1}`,
 							data
 						)
+						if (sheetName === 'Controller' && row === 0 && column === 0) console.log(`Controller A1:${data}`)
 					}
 				}
 			})
@@ -112,13 +113,6 @@ export class Variables {
 				changedVariables[
 					variableId.replace(/ /g, '_').replace(/!/g, '_').replace(/'/g, '').replace(/\(/g, '').replace(/\)/g, '')
 				] = value + ''
-		})
-
-		this.currentVariables.forEach((value, variableId) => {
-			if (newVariables.get(variableId) !== value)
-				changedVariables[
-					variableId.replace(/ /g, '_').replace(/!/g, '_').replace(/'/g, '').replace(/\(/g, '').replace(/\)/g, '')
-				] = value
 		})
 
 		if (Object.keys(changedVariables).length > 0) {
