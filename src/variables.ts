@@ -58,7 +58,7 @@ export class Variables {
 				const rowCount = valueRange?.values?.length || 0
 				let columnCount = 0
 
-				valueRange?.values.forEach((row: any) => {
+				valueRange?.values?.forEach((row: any) => {
 					if (row.length > columnCount) columnCount = row.length
 				})
 

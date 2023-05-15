@@ -174,7 +174,7 @@ export class API {
 		if (cellIndex === null) return null
 
 		const sheet = spreadsheet.valueRanges.find((valueRange: any) => {
-			return valueRange.range.split('!')[0] === cellID.split('!')[0]
+			return (valueRange.range.split('!')[0] === cellID.split('!')[0]) || (valueRange.range.split('!')[0] === `'${cellID.split('!')[0]}'`)
 		})
 
 		const value = sheet.values[cellIndex.row]?.[cellIndex.col]
