@@ -17,7 +17,6 @@ import { getPresets } from './presets'
 import { getUpgrades } from './upgrade'
 import { Variables } from './variables'
 
-
 /**
  * Companion instance class for Google Sheets API
  */
@@ -59,7 +58,7 @@ class GoogleSheetsInstance extends InstanceBase<Config> {
 			'Companion 3 makes some changes to Instance Variables, and limits certain symbols being used, such as !, so please check your variables are working and look at the examples showing how to reference A1 variiable in each sheet'
 		)
 	}
-	
+
 	/**
 	 * @param config new configuration data
 	 * @description triggered every time the config for this instance is saved
@@ -91,7 +90,6 @@ class GoogleSheetsInstance extends InstanceBase<Config> {
 	public getConfigFields(): SomeCompanionConfigField[] {
 		return getConfigFields()
 	}
-
 
 	/**
 	 * @description sets channels, token, actions, and feedbacks available for this instance

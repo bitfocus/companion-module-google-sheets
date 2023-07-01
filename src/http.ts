@@ -16,7 +16,7 @@ interface Endpoints {
 interface Spreadsheets {
 	id: string
 	title: string
-	json: string[],
+	json: string[]
 	csv: string[]
 }
 

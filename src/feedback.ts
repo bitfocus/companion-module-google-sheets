@@ -6,7 +6,7 @@ import {
 	CompanionFeedbackAdvancedEvent,
 	CompanionFeedbackBooleanEvent,
 	SomeCompanionFeedbackInputField,
-	CompanionFeedbackContext 
+	CompanionFeedbackContext,
 } from '@companion-module/base'
 
 export interface GoogleSheetsFeedbacks {
@@ -41,7 +41,10 @@ interface GoogleSheetsFeedbackBoolean<T> {
 	description: string
 	style: Partial<CompanionFeedbackButtonStyleResult>
 	options: InputFieldWithDefault[]
-	callback: (feedback: Readonly<Omit<CompanionFeedbackBooleanEvent, 'options' | 'type'> & T>, context: CompanionFeedbackContext) => boolean | Promise<boolean>
+	callback: (
+		feedback: Readonly<Omit<CompanionFeedbackBooleanEvent, 'options' | 'type'> & T>,
+		context: CompanionFeedbackContext
+	) => boolean | Promise<boolean>
 	subscribe?: (feedback: Readonly<Omit<CompanionFeedbackBooleanEvent, 'options' | 'type'> & T>) => boolean
 	unsubscribe?: (feedback: Readonly<Omit<CompanionFeedbackBooleanEvent, 'options' | 'type'> & T>) => boolean
 }
@@ -52,7 +55,8 @@ interface GoogleSheetsFeedbackAdvanced<T> {
 	description: string
 	options: InputFieldWithDefault[]
 	callback: (
-		feedback: Readonly<Omit<CompanionFeedbackAdvancedEvent, 'options' | 'type'> & T>, context: CompanionFeedbackContext
+		feedback: Readonly<Omit<CompanionFeedbackAdvancedEvent, 'options' | 'type'> & T>,
+		context: CompanionFeedbackContext
 	) => CompanionAdvancedFeedbackResult
 	subscribe?: (
 		feedback: Readonly<Omit<CompanionFeedbackAdvancedEvent, 'options' | 'type'> & T>
@@ -134,6 +138,6 @@ export function getFeedbacks(instance: GoogleSheetsInstance): GoogleSheetsFeedba
 
 				return false
 			},
-		}
+		},
 	}
 }
