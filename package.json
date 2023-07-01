@@ -37,6 +37,7 @@
 	"license": "MIT",
 	"dependencies": {
 		"@companion-module/base": "~1.1.0",
+		"@json2csv/plainjs": "^7.0.1",
 		"got-cjs": "12.5.4",
 		"open": "~8.4.0"
 	},

@@ -1,6 +1,7 @@
 import { CompanionHTTPRequest, CompanionHTTPResponse } from '@companion-module/base'
 import GoogleSheetsInstance from './index'
 import { columnIndexToLetter } from './utils'
+import { Parser } from '@json2csv/plainjs'
 
 interface Endpoints {
 	GET: {
@@ -15,7 +16,8 @@ interface Endpoints {
 interface Spreadsheets {
 	id: string
 	title: string
-	sheets: string[]
+	json: string[],
+	csv: string[]
 }
 
 /**
@@ -47,12 +49,13 @@ export const httpHandler = async (
 	/**
 	 * GET Spreadsheet
 	 * Required Params - id, sheet
-	 * Optional Params - None
+	 * Optional Params - format
 	 * @description Returns Sheet values
 	 */
 	const getSpreadsheet = () => {
 		const id = request.query.id
 		const title = request.query.sheet
+		const format = request.query?.format || 'json'
 		const spreadsheet = instance.data.sheetValues.get(id)
 
 		if (spreadsheet) {
@@ -64,14 +67,31 @@ export const httpHandler = async (
 				response.status = 200
 				const data: any[] = []
 
-				sheet.values.forEach((row: any, rowIndex: number) => {
-					data[rowIndex] = {}
+				if (format === 'json') {
+					sheet.values.forEach((row: any, rowIndex: number) => {
+						data[rowIndex] = {}
 
-					row.forEach((value: any, columnIndex: number) => {
-						data[rowIndex][columnIndexToLetter(columnIndex) as string] = value
+						row.forEach((value: any, columnIndex: number) => {
+							data[rowIndex][columnIndexToLetter(columnIndex) as string] = value
+						})
 					})
-				})
-				response.body = JSON.stringify(data, null, 2)
+
+					response.body = JSON.stringify(data, null, 2)
+				} else if (format === 'csv') {
+					try {
+						const csvOpts = {
+							header: false,
+						}
+						const parser = new Parser(csvOpts)
+						const csv = parser.parse(sheet.values)
+						response.body = csv
+					} catch (err) {
+						instance.log('error', 'Error parsing spreadsheet JSON to CSV')
+						response.body = JSON.stringify({ status: 500, message: 'Error parsing spreadsheet JSON to CSV' })
+					}
+				} else {
+					response.body = JSON.stringify({ status: 400, message: 'Unsupported format type' })
+				}
 			} else {
 				response.body = JSON.stringify({ status: 404, message: 'Sheet Title not found' })
 			}
@@ -93,10 +113,15 @@ export const httpHandler = async (
 			data.push({
 				id: key,
 				title: value.properties.title,
-				sheets:
+				json:
 					value.sheets.map(
 						(sheet: any) =>
-							`http://${request.headers.host}${request.baseUrl}/spreadsheet?id=${key}&sheet=${sheet.properties.title}`
+							`http://${request.headers.host}${request.baseUrl}/spreadsheet?id=${key}&format=json&sheet=${sheet.properties.title}`
+					) || [],
+				csv:
+					value.sheets.map(
+						(sheet: any) =>
+							`http://${request.headers.host}${request.baseUrl}/spreadsheet?id=${key}&format=csv&sheet=${sheet.properties.title}`
 					) || [],
 			})
 		}
