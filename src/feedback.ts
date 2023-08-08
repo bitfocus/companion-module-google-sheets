@@ -117,23 +117,23 @@ export function getFeedbacks(instance: GoogleSheetsInstance): GoogleSheetsFeedba
 			style: {
 				bgcolor: combineRgb(255, 0, 0),
 			},
-			callback: (feedback) => {
-				//const cellValue = instance.api.parseCellValue(feedback.options.spreadsheet, feedback.options.cell)
-
-				const cellValue = feedback.options.cell
+			callback: async (feedback, context) => {
+				const cell = await context.parseVariablesInString(feedback.options.cell)
+				const value = await context.parseVariablesInString(feedback.options.value)
+				const cellValue = await instance.api.parseCellValue(feedback.options.spreadsheet, cell)
 
 				if (cellValue === null) return false
 
 				if (feedback.options.comparison === 'eq') {
-					return cellValue == feedback.options.value
+					return cellValue == value
 				} else if (feedback.options.comparison === 'lt') {
-					return cellValue < feedback.options.value
+					return cellValue < value
 				} else if (feedback.options.comparison === 'lte') {
-					return cellValue <= feedback.options.value
+					return cellValue <= value
 				} else if (feedback.options.comparison === 'gt') {
-					return cellValue > feedback.options.value
+					return cellValue > value
 				} else if (feedback.options.comparison === 'gte') {
-					return cellValue >= feedback.options.value
+					return cellValue >= value
 				}
 
 				return false

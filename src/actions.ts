@@ -82,22 +82,33 @@ export function getActions(instance: GoogleSheetsInstance): GoogleSheetsActions 
 				},
 			],
 			callback: async (action) => {
-				if (!action.options.cell || !action.options.cell.includes('!') || !action.options.spreadsheet) return
-				let newValue: string | number = action.options.value
+				const cell = await instance.parseVariablesInString(action.options.cell)
+				if (!cell || !cell.includes('!') || !action.options.spreadsheet) return
+				let newValue: string | number = await instance.parseVariablesInString(action.options.value)
+
 
 				if (action.options.type === 'Set') {
-					instance.api.adjustCell(action.options.spreadsheet, action.options.cell, newValue.toString())
+					instance.log('debug', `Setting Sheet: ${action.options.spreadsheet} Cell: ${cell} Value: ${newValue}`)
+					instance.api.adjustCell(action.options.spreadsheet, cell, newValue)
 				} else {
-					const cellValue = await instance.api.parseCellValue(action.options.spreadsheet, action.options.cell)
+					newValue = parseFloat(newValue)
+					
+					if (isNaN(newValue)) {
+						instance.log('warn', `Unable to adjust cell: ${newValue} is not a number`)
+						return
+					}
+
+					const cellValue = await instance.api.parseCellValue(action.options.spreadsheet, cell)
 					if (cellValue === null) return
 
 					if (action.options.type === 'Increase') {
-						newValue = parseFloat(cellValue) + parseFloat(action.options.value)
+						newValue = parseFloat(cellValue) + newValue
 					} else if (action.options.type === 'Decrease') {
-						newValue = parseFloat(cellValue) - parseFloat(action.options.value)
+						newValue = parseFloat(cellValue) - newValue
 					}
 
-					instance.api.adjustCell(action.options.spreadsheet, action.options.cell, newValue.toString())
+					instance.log('debug', `Setting Sheet: ${action.options.spreadsheet} Cell: ${cell} Value: ${newValue}`)
+					instance.api.adjustCell(action.options.spreadsheet, cell, newValue.toString())
 				}
 			},
 		},

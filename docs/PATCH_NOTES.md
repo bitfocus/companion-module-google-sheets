@@ -1,4 +1,9 @@
 # Path Notes
+
+**V1.1.1**
+- Fixed an issue with Cell Value feedback
+- Added support for variables in actions and feedbacks
+
 **V1.1.0**
 - Added CSV formatting for the HTTP endpoint
 
