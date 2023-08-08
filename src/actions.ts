@@ -86,13 +86,12 @@ export function getActions(instance: GoogleSheetsInstance): GoogleSheetsActions 
 				if (!cell || !cell.includes('!') || !action.options.spreadsheet) return
 				let newValue: string | number = await instance.parseVariablesInString(action.options.value)
 
-
 				if (action.options.type === 'Set') {
 					instance.log('debug', `Setting Sheet: ${action.options.spreadsheet} Cell: ${cell} Value: ${newValue}`)
 					instance.api.adjustCell(action.options.spreadsheet, cell, newValue)
 				} else {
 					newValue = parseFloat(newValue)
-					
+
 					if (isNaN(newValue)) {
 						instance.log('warn', `Unable to adjust cell: ${newValue} is not a number`)
 						return
