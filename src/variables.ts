@@ -41,40 +41,53 @@ export class Variables {
 		newDefinitions.set('backoff_timer', 'Request Backoff Timer')
 		newVariables.set('backoff_timer', this.instance.api.rateLimit.backoff)
 
-		this.instance.data.sheetValues.forEach((spreadsheet, _id) => {
-			newDefinitions.set(`${spreadsheet.properties.title}_id`, `Spreadsheet ${spreadsheet.properties.title} ID`)
-			newVariables.set(`${spreadsheet.properties.title}_id`, spreadsheet.spreadsheetId)
+		this.instance.data.sheetValues.forEach((spreadsheet, id) => {
+			const title = this.instance.config.referenceIndex
+				? this.instance.config.sheetIDs.split(' ').indexOf(id)
+				: spreadsheet.properties.title
+			newDefinitions.set(`${title}_id`, `Spreadsheet ${title} ID`)
+			newVariables.set(`${title}_id`, spreadsheet.spreadsheetId)
+
+			if (this.instance.config.referenceIndex) {
+				newDefinitions.set(`${title}_title`, `Spreadsheet ${title} Title`)
+				newVariables.set(`${title}_title`, spreadsheet.properties.title)
+			} else {
+				newDefinitions.set(`${title}_index`, `Spreadsheet ${title} Index`)
+				newVariables.set(`${title}_index`, this.instance.config.sheetIDs.split(' ').indexOf(id))
+			}
 
 			spreadsheet.sheets.forEach((sheet: any) => {
-				newDefinitions.set(
-					`${spreadsheet.properties.title}_sheet_${sheet.properties.index}`,
-					`${spreadsheet.properties.title} Sheet ${sheet.properties.index} Title`
-				)
-				newVariables.set(`${spreadsheet.properties.title}_sheet_${sheet.properties.index}`, sheet.properties.title)
+				newDefinitions.set(`${title}_sheet_${sheet.properties.index}`, `${title} Sheet ${sheet.properties.index} Title`)
+				newVariables.set(`${title}_sheet_${sheet.properties.index}`, sheet.properties.title)
 			})
 
 			spreadsheet.valueRanges.forEach((valueRange: any) => {
-				const sheetName = valueRange.range.split('!')[0]
+				let sheetName = valueRange.range.split('!')[0]
 				const rowCount = valueRange?.values?.length || 0
 				let columnCount = 0
+
+				if (sheetName.startsWith(`'`) && sheetName.endsWith(`'`)) sheetName = sheetName.slice(1, -1)
 
 				valueRange?.values?.forEach((row: any) => {
 					if (row.length > columnCount) columnCount = row.length
 				})
+
+				// For empty sheets without values, set a default empty example
+				if (valueRange.values === undefined) {
+					newDefinitions.set(`${title}_${sheetName}!A1`, `Example ${title} ${sheetName}!A1`)
+					newVariables.set(`${title}_${sheetName}!A1`, '')
+				}
 
 				for (let row = 0; row < rowCount; row++) {
 					for (let column = 0; column < columnCount; column++) {
 						const data = valueRange.values[row]?.[column] || ''
 						if (row === 0 && column === 0) {
 							newDefinitions.set(
-								`${spreadsheet.properties.title}_${sheetName}!${columnIndexToLetter(column)}${row + 1}`,
-								`Example ${spreadsheet.properties.title} ${sheetName}!${columnIndexToLetter(column)}${row + 1}`
+								`${title}_${sheetName}!${columnIndexToLetter(column)}${row + 1}`,
+								`Example ${title} ${sheetName}!${columnIndexToLetter(column)}${row + 1}`
 							)
 						}
-						newVariables.set(
-							`${spreadsheet.properties.title}_${sheetName}!${columnIndexToLetter(column)}${row + 1}`,
-							data
-						)
+						newVariables.set(`${title}_${sheetName}!${columnIndexToLetter(column)}${row + 1}`, data)
 					}
 				}
 			})
@@ -91,7 +104,7 @@ export class Variables {
 		})
 
 		if (definitionChange) {
-			this.instance.log('debug', 'new definitions')
+			this.instance.log('debug', 'Setting new variable definitions')
 			this.instance.setVariableDefinitions(
 				[...newDefinitions.entries()].map((entry) => ({
 					variableId: entry[0]

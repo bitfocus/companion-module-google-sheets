@@ -21,7 +21,7 @@ interface CellValueCallback {
 	options: Readonly<{
 		spreadsheet: string
 		cell: string
-		comparison: 'eq' | 'lt' | 'lte' | 'gt' | 'gte'
+		comparison: 'eq' | 'ne' | 'lt' | 'lte' | 'gt' | 'gte'
 		value: string
 	}>
 }
@@ -82,10 +82,17 @@ export function getFeedbacks(instance: GoogleSheetsInstance): GoogleSheetsFeedba
 					default: '',
 					choices: [
 						{ label: 'Select Spreadsheet', id: '' },
-						...Array.from(instance.data.sheetData, ([id, spreadsheet]: any) => ({
-							label: spreadsheet.properties.title,
-							id,
-						})),
+						...instance.config.sheetIDs
+							.split(' ')
+							.map((id, index) => {
+								const spreadsheet = instance.data.sheetData.get(id)
+								if (!spreadsheet) return { label: '', id: '' }
+								return {
+									label: spreadsheet.properties.title,
+									id: instance.config.referenceIndex ? index.toString() : id,
+								}
+							})
+							.filter((x) => x.id !== ''),
 					],
 				},
 				{
@@ -93,6 +100,7 @@ export function getFeedbacks(instance: GoogleSheetsInstance): GoogleSheetsFeedba
 					label: 'Cell (Sheet!A1)',
 					id: 'cell',
 					default: '',
+					useVariables: true,
 				},
 				{
 					type: 'dropdown',
@@ -101,6 +109,7 @@ export function getFeedbacks(instance: GoogleSheetsInstance): GoogleSheetsFeedba
 					default: 'eq',
 					choices: [
 						{ id: 'eq', label: '=' },
+						{ id: 'ne', label: '!=' },
 						{ id: 'lt', label: '<' },
 						{ id: 'lte', label: '<=' },
 						{ id: 'gt', label: '>' },
@@ -112,6 +121,7 @@ export function getFeedbacks(instance: GoogleSheetsInstance): GoogleSheetsFeedba
 					label: 'Value',
 					id: 'value',
 					default: '',
+					useVariables: true,
 				},
 			],
 			style: {
@@ -120,12 +130,24 @@ export function getFeedbacks(instance: GoogleSheetsInstance): GoogleSheetsFeedba
 			callback: async (feedback, context) => {
 				const cell = await context.parseVariablesInString(feedback.options.cell)
 				const value = await context.parseVariablesInString(feedback.options.value)
-				const cellValue = await instance.api.parseCellValue(feedback.options.spreadsheet, cell)
+
+				let spreadsheetID = feedback.options.spreadsheet
+
+				if (instance.config.referenceIndex) {
+					const idIndex = parseInt(feedback.options.spreadsheet)
+					if (isNaN(idIndex)) return false
+					spreadsheetID = instance.config.sheetIDs.split(' ')[idIndex]
+					if (spreadsheetID === undefined) return false
+				}
+
+				const cellValue = await instance.api.parseCellValue(spreadsheetID, cell)
 
 				if (cellValue === null) return false
 
 				if (feedback.options.comparison === 'eq') {
 					return cellValue == value
+				} else if (feedback.options.comparison === 'ne') {
+					return cellValue != value
 				} else if (feedback.options.comparison === 'lt') {
 					return cellValue < value
 				} else if (feedback.options.comparison === 'lte') {

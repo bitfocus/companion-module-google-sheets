@@ -7,7 +7,9 @@ export interface Config {
 	redirectURI: string
 	code: string
 	sheetIDs: string
+	referenceIndex: boolean
 	pollInterval: number
+	clearTokens: boolean
 
 	accessToken?: string
 	refreshToken?: string
@@ -28,9 +30,9 @@ export const getConfigFields = (): SomeCompanionConfigField[] => {
 				<br />
         2. Select 'Web Application' as the Application Type, and give the app a name.
         <br />
-        3. In the 'Authorised redirect URIs' section add a redirect to a localhost URL that's not in use, such as "http://localhost:8001'.
+        3. In the 'Authorised redirect URIs' section add a redirect to a localhost URL that's not in use, such as http://localhost:8001.
         <br />
-        4. Copy and paste the Client ID, and Client Secret, and Redirect URI, into the config below. Click save and a page to authorize accessing Google Sheets will open to continue the process
+        4. Copy and paste the Client ID, and Client Secret, and Redirect URI, into the config below. Click save and a page to authorize accessing Google Sheets will open to continue the process (for users where Companion caan't open browser the URL is available in the connection logs)
         <br />
 				5. After visiting the URL, and authorizing the app, you'll be redirected to your Redirect URL. Copy the "code" parameter that's in the URL of the redirect and paste that in the "Code" config below.
 				`,
@@ -71,6 +73,13 @@ export const getConfigFields = (): SomeCompanionConfigField[] => {
 			default: '',
 		},
 		{
+			type: 'checkbox',
+			label: 'Reference Spreadsheets by Index instead of ID (requires updating actions/feedbacks)',
+			id: 'referenceIndex',
+			width: 12,
+			default: false,
+		},
+		{
 			type: 'static-text',
 			id: 'pollIntervalText',
 			width: 12,
@@ -86,6 +95,13 @@ export const getConfigFields = (): SomeCompanionConfigField[] => {
 			default: 1.5,
 			min: 0.1,
 			max: 86400,
+		},
+		{
+			type: 'checkbox',
+			label: 'Clear existing OAuth tokens',
+			id: 'clearTokens',
+			width: 12,
+			default: false,
 		},
 	]
 }

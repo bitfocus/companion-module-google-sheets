@@ -30,7 +30,9 @@ class GoogleSheetsInstance extends InstanceBase<Config> {
 		redirectURI: '',
 		code: '',
 		sheetIDs: '',
+		referenceIndex: false,
 		pollInterval: 1.5,
+		clearTokens: false,
 	}
 	public data = {
 		sheetData: new Map<string, any>(),
@@ -65,6 +67,16 @@ class GoogleSheetsInstance extends InstanceBase<Config> {
 	 */
 	public async configUpdated(config: Config): Promise<void> {
 		this.config = config
+		if (this.config.clearTokens) {
+			this.config.accessToken = undefined
+			this.config.refreshToken = undefined
+			this.config.code = ''
+			this.config.clearTokens = false
+
+			this.log('info', 'Clearing Access and Refresh Tokens')
+			this.saveConfig(this.config)
+		}
+
 		this.api.auth()
 		if (this.api.pollAPIInterval) clearTimeout(this.api.pollAPIInterval)
 		this.api.updatePollInterval()

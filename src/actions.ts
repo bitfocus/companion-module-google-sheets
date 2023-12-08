@@ -55,15 +55,22 @@ export function getActions(instance: GoogleSheetsInstance): GoogleSheetsActions 
 				{
 					type: 'dropdown',
 					label: 'Spreadsheet',
-					tooltip: 'Type of cell adjustment',
+					tooltip: 'Spreadsheet to adjust',
 					id: 'spreadsheet',
 					default: '',
 					choices: [
 						{ label: 'Select Spreadsheet', id: '' },
-						...Array.from(instance.data.sheetData, ([id, spreadsheet]: any) => ({
-							label: spreadsheet.properties.title,
-							id,
-						})),
+						...instance.config.sheetIDs
+							.split(' ')
+							.map((id, index) => {
+								const spreadsheet = instance.data.sheetData.get(id)
+								if (!spreadsheet) return { label: '', id: '' }
+								return {
+									label: spreadsheet.properties.title,
+									id: instance.config.referenceIndex ? index.toString() : id,
+								}
+							})
+							.filter((x) => x.id !== ''),
 					],
 				},
 				{
@@ -72,6 +79,7 @@ export function getActions(instance: GoogleSheetsInstance): GoogleSheetsActions 
 					tooltip: 'Sheet!A1 Notation',
 					id: 'cell',
 					default: '',
+					useVariables: true,
 				},
 				{
 					type: 'textinput',
@@ -79,16 +87,26 @@ export function getActions(instance: GoogleSheetsInstance): GoogleSheetsActions 
 					tooltip: 'Value to set/increase/decrease',
 					id: 'value',
 					default: '',
+					useVariables: true,
 				},
 			],
 			callback: async (action) => {
 				const cell = await instance.parseVariablesInString(action.options.cell)
-				if (!cell || !cell.includes('!') || !action.options.spreadsheet) return
+				if (!cell || !cell.includes('!') || action.options.spreadsheet === '') return
 				let newValue: string | number = await instance.parseVariablesInString(action.options.value)
 
+				let spreadsheetID = action.options.spreadsheet
+
+				if (instance.config.referenceIndex) {
+					const idIndex = parseInt(action.options.spreadsheet)
+					if (isNaN(idIndex)) return
+					spreadsheetID = instance.config.sheetIDs.split(' ')[idIndex]
+					if (spreadsheetID === undefined) return
+				}
+
 				if (action.options.type === 'Set') {
-					instance.log('debug', `Setting Sheet: ${action.options.spreadsheet} Cell: ${cell} Value: ${newValue}`)
-					instance.api.adjustCell(action.options.spreadsheet, cell, newValue)
+					instance.log('debug', `Setting Sheet: ${spreadsheetID} Cell: ${cell} Value: ${newValue}`)
+					instance.api.adjustCell(spreadsheetID, cell, newValue)
 				} else {
 					newValue = parseFloat(newValue)
 
@@ -106,7 +124,7 @@ export function getActions(instance: GoogleSheetsInstance): GoogleSheetsActions 
 						newValue = parseFloat(cellValue) - newValue
 					}
 
-					instance.log('debug', `Setting Sheet: ${action.options.spreadsheet} Cell: ${cell} Value: ${newValue}`)
+					instance.log('debug', `Adjusting Sheet: ${action.options.spreadsheet} Cell: ${cell} Value: ${newValue}`)
 					instance.api.adjustCell(action.options.spreadsheet, cell, newValue.toString())
 				}
 			},

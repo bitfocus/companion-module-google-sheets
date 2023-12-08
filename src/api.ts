@@ -42,6 +42,7 @@ export class API {
 	}
 	private ready = false
 	public refreshTokenInterval: NodeJS.Timer = setInterval(() => this.refreshToken(), 3000000)
+	public spreadsheetIndexToID: string[] = []
 
 	/**
 	 * @description API reques t to modify a cell
@@ -75,11 +76,16 @@ export class API {
 		if (await this.codeExchange()) return true
 
 		if (this.instance.config.clientID && this.instance.config.clientSecret && this.instance.config.redirectURI) {
-			const oauthURL = `https://accounts.google.com/o/oauth2/v2/auth?client_id=${this.instance.config.clientID}&redirect_uri=${this.instance.config.redirectURI}&response_type=code
-      &scope=https://www.googleapis.com/auth/spreadsheets&prompt=consent&access_type=offline`
+			const oauthURL = `https://accounts.google.com/o/oauth2/v2/auth?client_id=${this.instance.config.clientID}&redirect_uri=${this.instance.config.redirectURI}&response_type=code&scope=https://www.googleapis.com/auth/spreadsheets&prompt=consent&access_type=offline`
 
-			open(oauthURL)
-			this.instance.log('debug', 'Opening OAuth URL')
+			this.instance.log('warn', `OAuth URL: ${oauthURL}`)
+
+			try {
+				open(oauthURL)
+				this.instance.log('debug', 'Opening OAuth URL')
+			} catch (err) {
+				this.instance.log('debug', `Unable to open default browser`)
+			}
 		}
 
 		return false
@@ -99,6 +105,8 @@ export class API {
 			['grant_type', 'authorization_code'],
 		])
 
+		this.instance.log('debug', `Attempting to exchange Code for Token - ${this.instance.config.code}`)
+
 		return got
 			.post('https://oauth2.googleapis.com/token', { searchParams, responseType: 'json' })
 			.then((res: any) => {
@@ -107,18 +115,15 @@ export class API {
 
 				this.instance.config.accessToken = res.body.access_token
 				this.instance.config.refreshToken = res.body.refresh_token
+				this.instance.config.code = ''
 				this.ready = true
-				this.instance.saveConfig({
-					...this.instance.config,
-					accessToken: res.body.access_token,
-					refreshToken: res.body.refresh_token,
-				})
+				this.instance.saveConfig(this.instance.config)
 
 				return true
 			})
 			.catch((err) => {
-				this.instance.updateStatus(InstanceStatus.UnknownError, `Error exchanging code - ${err.message}`)
-
+				this.instance.updateStatus(InstanceStatus.UnknownError, `Error exchanging code`)
+				this.instance.log('warn', `Error exchanging code - ${err.message}`)
 				this.instance.saveConfig({ ...this.instance.config, code: '' })
 
 				return false
@@ -131,6 +136,8 @@ export class API {
 	private refreshToken = async (): Promise<boolean> => {
 		if (!this.instance.config.clientID || !this.instance.config.clientSecret || !this.instance.config.refreshToken)
 			return false
+
+		this.instance.log('debug', `Attempting to refresh token - ${this.instance.config.refreshToken}`)
 
 		const searchParams = new URLSearchParams([
 			['client_id', this.instance.config.clientID],
@@ -224,7 +231,8 @@ export class API {
 			const sheet = this.instance.data.sheetData.get(id)
 			if (!sheet) return
 
-			const individualSheets = sheet.sheets.map((doc: any) => doc.properties.title)
+			// Surround title in single quote to prevent Google mistaking Title for Cell
+			const individualSheets = sheet.sheets.map((doc: any) => `'${doc.properties.title}'`)
 			const url = `https://sheets.googleapis.com/v4/spreadsheets/${id}/values:batchGet?access_token=${
 				this.instance.config.accessToken
 			}&ranges=${individualSheets.join('&ranges=')}`
@@ -242,6 +250,7 @@ export class API {
 		}
 
 		const sheetIDs = this.instance.config.sheetIDs.split(' ')
+		this.spreadsheetIndexToID = sheetIDs
 
 		// Limit requests for spreadsheet metadata to 1 in 4 requests
 		if (this.pollAPISheetData === 0) {

@@ -11,6 +11,15 @@ If this module, or the others I work on such as vMix, Twitch, Discord, Google Sh
 considering supporting the continued development of these modules by sponsoring me on GitHub https://github.com/sponsors/thedist/
 
 # Recent Patches
+**V1.2.0**
+- Added config option to clear any existing Access/Refresh tokens
+- Added an example variable for sheets that are empty
+- Added config option to reference Spreadsheets by Index rather than ID. This allows adjusting the spreadsheet all actions/feedbacks/variables reference by adjusting the order of Spreadsheet ID's in the config
+- Added Not Equal `!=` option to Cell Value feedback comparison
+- Added variable suggestions to certain action/feedback fields
+- Fixed an issue with Google's API parsing a sheet title as a cell for the default sheet
+- Added sponsor links on [Github](https://github.com/sponsors/thedist) and [Ko-Fi](https://ko-fi.com/thedist) for those who have asked to tip me for this continued development work.
+
 **V1.1.1**
 - Fixed an issue with Cell Value feedback
 - Added support for variables in actions and feedbacks
