@@ -46,6 +46,21 @@ export const httpHandler = async (
 		body: JSON.stringify({ status: 404, message: 'Not Found' }),
 	}
 
+	const getAuth = () => {
+		if (instance.config.clientID && instance.config.clientSecret && instance.config.redirectURI) {
+			const oauthURL = `https://accounts.google.com/o/oauth2/v2/auth?client_id=${instance.config.clientID}&redirect_uri=${instance.config.redirectURI}&response_type=code&scope=https://www.googleapis.com/auth/spreadsheets&prompt=consent&access_type=offline`
+			instance.log('warn', `OAuth URL: ${oauthURL}`)
+
+			response.status = 302
+      response.headers = { location: oauthURL }
+		} else {
+			response.body = JSON.stringify({
+				status: 400,
+				message: 'Config is missing Client ID, Client Secret, and/or Redirect URI'
+			})
+		}
+	}
+
 	/**
 	 * GET Spreadsheet
 	 * Required Params - id, sheet
@@ -132,6 +147,7 @@ export const httpHandler = async (
 
 	const endpoints: Endpoints = {
 		GET: {
+			auth: getAuth,
 			spreadsheet: getSpreadsheet,
 			spreadsheets: getSpreadsheets,
 		},

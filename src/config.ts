@@ -1,4 +1,5 @@
 import { SomeCompanionConfigField } from '@companion-module/base'
+import GoogleSheetsInstance from './index'
 
 export interface Config {
 	//
@@ -15,25 +16,24 @@ export interface Config {
 	refreshToken?: string
 }
 
-export const getConfigFields = (): SomeCompanionConfigField[] => {
+export const getConfigFields = (instance: GoogleSheetsInstance): SomeCompanionConfigField[] => {
 	return [
 		{
 			type: 'static-text',
 			id: 'info',
 			width: 12,
 			label: 'Information',
-			value: `This module is currently in early beta, and requires creating an App in Googles Cloud Platform to gain access to read/writing to Sheets.
-				<br /><br />
-				Prerequisite: On the <a href="https://console.cloud.google.com/home/dashboard" target="_blank">Google Cloud Console</a> Create a Project, and in the APIs and services > Enabled APIs and servers, make sure you enable the Google Sheets API
-				<br/>
+			value: `This module requires creating an App in Googles Cloud Platform to gain access to read/write Google Sheets.
+				Prerequisite: On the <a href="https://console.cloud.google.com/home/dashboard" target="_blank">Google Cloud Console</a> Create a Project, and in the APIs and services > Enabled APIs and servers, make sure you enable the Google Sheets API.
+				<br/><br />
         1. Go to <a href="https://console.cloud.google.com/apis/credentials" target="_blank">https://console.cloud.google.com/apis/credentials</a>, click 'Create Credentials', and select 'OAuth client ID'
-				<br />
+				<br /><br />
         2. Select 'Web Application' as the Application Type, and give the app a name.
-        <br />
-        3. In the 'Authorised redirect URIs' section add a redirect to a localhost URL that's not in use, such as http://localhost:8001.
-        <br />
-        4. Copy and paste the Client ID, and Client Secret, and Redirect URI, into the config below. Click save and a page to authorize accessing Google Sheets will open to continue the process (for users where Companion caan't open browser the URL is available in the connection logs)
-        <br />
+        <br /><br />
+        3. In the 'Authorised redirect URIs' section add a redirect to a localhost URL that's not in use, such as http://localhost:8001
+        <br /><br />
+        4. Copy and paste the Client ID, and Client Secret, and Redirect URI, into the config below. Click save, and then proceed to <a href="./instance/${instance.label}/auth" target="_blank">Google Sheets Auth</a> and authenticate with the app (the auth URL is also available in the logs for this connection).
+				<br /><br />
 				5. After visiting the URL, and authorizing the app, you'll be redirected to your Redirect URL. Copy the "code" parameter that's in the URL of the redirect and paste that in the "Code" config below.
 				`,
 		},

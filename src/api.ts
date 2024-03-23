@@ -1,5 +1,4 @@
 import got from 'got-cjs'
-import open from 'open'
 import GoogleSheetsInstance from './'
 import { cellToIndex } from './utils'
 import { InstanceStatus } from '@companion-module/base'
@@ -74,20 +73,6 @@ export class API {
 
 		if (await this.refreshToken()) return true
 		if (await this.codeExchange()) return true
-
-		if (this.instance.config.clientID && this.instance.config.clientSecret && this.instance.config.redirectURI) {
-			const oauthURL = `https://accounts.google.com/o/oauth2/v2/auth?client_id=${this.instance.config.clientID}&redirect_uri=${this.instance.config.redirectURI}&response_type=code&scope=https://www.googleapis.com/auth/spreadsheets&prompt=consent&access_type=offline`
-
-			this.instance.log('warn', `OAuth URL: ${oauthURL}`)
-
-			try {
-				open(oauthURL)
-				this.instance.log('debug', 'Opening OAuth URL')
-			} catch (err) {
-				this.instance.log('debug', `Unable to open default browser`)
-			}
-		}
-
 		return false
 	}
 
@@ -233,9 +218,8 @@ export class API {
 
 			// Surround title in single quote to prevent Google mistaking Title for Cell
 			const individualSheets = sheet.sheets.map((doc: any) => `'${doc.properties.title}'`)
-			const url = `https://sheets.googleapis.com/v4/spreadsheets/${id}/values:batchGet?access_token=${
-				this.instance.config.accessToken
-			}&ranges=${individualSheets.join('&ranges=')}`
+			const url = `https://sheets.googleapis.com/v4/spreadsheets/${id}/values:batchGet?access_token=${this.instance.config.accessToken
+				}&ranges=${individualSheets.join('&ranges=')}`
 
 			return got(url, { responseType: 'json' })
 				.then((res: any) => {

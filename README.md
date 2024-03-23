@@ -11,6 +11,11 @@ If this module, or the others I work on such as vMix, Twitch, Discord, Google Sh
 considering supporting the continued development of these modules by sponsoring me on GitHub https://github.com/sponsors/thedist/
 
 # Recent Patches
+**V1.3.0**
+- Removed the dependency `Open`
+- Replaced opening a browser tab for auth with linking back to a HTTP handler to redirect the user to the OAuth URL
+- Minor typo fixes
+
 **V1.2.0**
 - Added config option to clear any existing Access/Refresh tokens
 - Added an example variable for sheets that are empty
@@ -19,17 +24,6 @@ considering supporting the continued development of these modules by sponsoring 
 - Added variable suggestions to certain action/feedback fields
 - Fixed an issue with Google's API parsing a sheet title as a cell for the default sheet
 - Added sponsor links on [Github](https://github.com/sponsors/thedist) and [Ko-Fi](https://ko-fi.com/thedist) for those who have asked to tip me for this continued development work.
-
-**V1.1.1**
-- Fixed an issue with Cell Value feedback
-- Added support for variables in actions and feedbacks
-
-**V1.1.0**
-- Added CSV formatting for the HTTP endpoint
-
-**V1.0.2**
-- Fixed increase/decrease action failing when the sheet name has added single quotes by Google due to its name.
-- Fixed a crashed caused by a valueRange not having any values
 
 
 # License

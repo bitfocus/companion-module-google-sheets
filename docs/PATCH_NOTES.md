@@ -1,5 +1,10 @@
 # Path Notes
 
+**V1.3.0**
+- Removed the dependency `Open`
+- Replaced opening a browser tab for auth with linking back to a HTTP handler to redirect the user to the OAuth URL
+- Minor typo fixes
+
 **V1.2.0**
 - Added config option to clear any existing Access/Refresh tokens
 - Added an example variable for sheets that are empty

@@ -51,7 +51,7 @@ class GoogleSheetsInstance extends InstanceBase<Config> {
 	 */
 	public async init(config: Config): Promise<void> {
 		this.config = config
-		this.api.auth()
+		await this.api.auth()
 		this.updateInstance()
 
 		await this.configUpdated(config)
@@ -77,7 +77,7 @@ class GoogleSheetsInstance extends InstanceBase<Config> {
 			this.saveConfig(this.config)
 		}
 
-		this.api.auth()
+		await this.api.auth()
 		if (this.api.pollAPIInterval) clearTimeout(this.api.pollAPIInterval)
 		this.api.updatePollInterval()
 
@@ -100,7 +100,7 @@ class GoogleSheetsInstance extends InstanceBase<Config> {
 	 * @description generates the config options available for this instance
 	 */
 	public getConfigFields(): SomeCompanionConfigField[] {
-		return getConfigFields()
+		return getConfigFields(this)
 	}
 
 	/**
