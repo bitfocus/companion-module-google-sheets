@@ -1,5 +1,8 @@
 # Path Notes
 
+**V1.3.1**
+- Fixed bug related to Spreadsheet ID
+
 **V1.3.0**
 - Removed the dependency `Open`
 - Replaced opening a browser tab for auth with linking back to a HTTP handler to redirect the user to the OAuth URL

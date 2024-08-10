@@ -115,7 +115,7 @@ export function getActions(instance: GoogleSheetsInstance): GoogleSheetsActions 
 						return
 					}
 
-					const cellValue = await instance.api.parseCellValue(action.options.spreadsheet, cell)
+					const cellValue = await instance.api.parseCellValue(spreadsheetID, cell)
 					if (cellValue === null) return
 
 					if (action.options.type === 'Increase') {
@@ -125,7 +125,7 @@ export function getActions(instance: GoogleSheetsInstance): GoogleSheetsActions 
 					}
 
 					instance.log('debug', `Adjusting Sheet: ${action.options.spreadsheet} Cell: ${cell} Value: ${newValue}`)
-					instance.api.adjustCell(action.options.spreadsheet, cell, newValue.toString())
+					instance.api.adjustCell(spreadsheetID, cell, newValue.toString())
 				}
 			},
 		},
