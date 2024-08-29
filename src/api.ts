@@ -44,7 +44,46 @@ export class API {
 	public spreadsheetIndexToID: string[] = []
 
 	/**
-	 * @description API reques t to modify a cell
+	 * @description API request to create a sheet
+	 */
+	public addSheet = async (spreadsheet: string, sheetName: string): Promise<void> => {
+		const url = `https://sheets.googleapis.com/v4/spreadsheets/${spreadsheet}:batchUpdate?access_token=${this.instance.config.accessToken}`
+
+		const body = {
+			requests: [
+				{
+					addSheet: {
+						properties: {
+							title: sheetName,
+						},
+					},
+				},
+			],
+			includeSpreadsheetInResponse: false,
+			responseRanges: [],
+			responseIncludeGridData: false,
+		}
+
+		got
+			.post(url, { body: JSON.stringify(body) })
+			.then(() => {
+				this.instance.log('info', `Sheet ${sheetName} added`)
+			})
+			.catch((err) => {
+				let body = err?.response?.body
+
+				try {
+					body = JSON.parse(body)
+					this.instance.log('debug', JSON.stringify(body))
+					this.instance.log('warn', body.error.message)
+				} catch (e) {
+					this.instance.log('warn', 'API Error - Unable to parse response')
+				}
+			})
+	}
+
+	/**
+	 * @description API request to modify a cell
 	 */
 	public adjustCell = async (spreadsheet: string, cell: string, value: string): Promise<void> => {
 		if (!this.ready || !this.instance.config.sheetIDs) return
@@ -62,6 +101,50 @@ export class API {
 			})
 			.catch((err) => {
 				this.instance.log('warn', `Error changing cell: ${JSON.stringify(err)}`)
+			})
+	}
+
+	/**
+	 * @description API request to duplicate a sheet
+	 */
+	public duplicateSheet = async (
+		spreadsheet: string,
+		originalSheet: number,
+		newSheet: string,
+		index: number
+	): Promise<void> => {
+		const url = `https://sheets.googleapis.com/v4/spreadsheets/${spreadsheet}:batchUpdate?access_token=${this.instance.config.accessToken}`
+
+		const body = {
+			requests: [
+				{
+					duplicateSheet: {
+						sourceSheetId: originalSheet,
+						insertSheetIndex: index,
+						newSheetName: newSheet,
+					},
+				},
+			],
+			includeSpreadsheetInResponse: false,
+			responseRanges: [],
+			responseIncludeGridData: false,
+		}
+
+		got
+			.post(url, { body: JSON.stringify(body) })
+			.then(() => {
+				this.instance.log('info', `Sheet ${newSheet} added`)
+			})
+			.catch((err) => {
+				let body = err?.response?.body
+
+				try {
+					body = JSON.parse(body)
+					this.instance.log('debug', JSON.stringify(body))
+					this.instance.log('warn', body.error.message)
+				} catch (e) {
+					this.instance.log('warn', 'API Error - Unable to parse response')
+				}
 			})
 	}
 
@@ -218,8 +301,9 @@ export class API {
 
 			// Surround title in single quote to prevent Google mistaking Title for Cell
 			const individualSheets = sheet.sheets.map((doc: any) => `'${doc.properties.title}'`)
-			const url = `https://sheets.googleapis.com/v4/spreadsheets/${id}/values:batchGet?access_token=${this.instance.config.accessToken
-				}&ranges=${individualSheets.join('&ranges=')}`
+			const url = `https://sheets.googleapis.com/v4/spreadsheets/${id}/values:batchGet?access_token=${
+				this.instance.config.accessToken
+			}&ranges=${individualSheets.join('&ranges=')}`
 
 			return got(url, { responseType: 'json' })
 				.then((res: any) => {

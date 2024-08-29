@@ -2,10 +2,20 @@ import { CompanionActionEvent, SomeCompanionActionInputField } from '@companion-
 import GoogleSheetsInstance from './index'
 
 export interface GoogleSheetsActions {
+	addSheet: GoogleSheetsAction<AddSheetCallback>
 	adjustCell: GoogleSheetsAction<AdjustCellCallback>
+	duplicateSheet: GoogleSheetsAction<DuplicateSheetCallback>
 
 	// Index signature
 	[key: string]: GoogleSheetsAction<any>
+}
+
+interface AddSheetCallback {
+	actionId: 'addSheet'
+	options: Readonly<{
+		spreadsheet: string
+		name: string
+	}>
 }
 
 interface AdjustCellCallback {
@@ -18,7 +28,16 @@ interface AdjustCellCallback {
 	}>
 }
 
-export type ActionCallbacks = ''
+interface DuplicateSheetCallback {
+	actionId: 'duplicateSheet'
+	options: Readonly<{
+		spreadsheet: string
+		duplicateName: string
+		newName: string
+	}>
+}
+
+export type ActionCallbacks = AddSheetCallback | AdjustCellCallback | DuplicateSheetCallback
 
 // Force options to have a default to prevent sending undefined values
 type InputFieldWithDefault = Exclude<SomeCompanionActionInputField, 'default'> & {
@@ -37,6 +56,49 @@ export interface GoogleSheetsAction<T> {
 
 export function getActions(instance: GoogleSheetsInstance): GoogleSheetsActions {
 	return {
+		addSheet: {
+			name: 'Add Sheet',
+			options: [
+				{
+					type: 'dropdown',
+					label: 'Spreadsheet',
+					tooltip: 'Spreadsheet to adjust',
+					id: 'spreadsheet',
+					default: '',
+					choices: [
+						{ label: 'Select Spreadsheet', id: '' },
+						...instance.config.sheetIDs
+							.split(' ')
+							.map((id, index) => {
+								const spreadsheet = instance.data.sheetData.get(id)
+								if (!spreadsheet) return { label: '', id: '' }
+								return {
+									label: spreadsheet.properties.title,
+									id: instance.config.referenceIndex ? index.toString() : id,
+								}
+							})
+							.filter((x) => x.id !== ''),
+					],
+				},
+				{
+					type: 'textinput',
+					label: 'Name',
+					tooltip: 'Name for the new Sheet',
+					id: 'name',
+					default: '',
+					useVariables: true,
+				},
+			],
+			callback: async (action) => {
+				const name = await instance.parseVariablesInString(action.options.name)
+				const idIndex = parseInt(action.options.spreadsheet)
+				if (isNaN(idIndex)) return
+				const spreadsheetID = instance.config.sheetIDs.split(' ')[idIndex]
+
+				instance.api.addSheet(spreadsheetID, name)
+			},
+		},
+
 		adjustCell: {
 			name: 'Adjust Cell',
 			options: [
@@ -126,6 +188,73 @@ export function getActions(instance: GoogleSheetsInstance): GoogleSheetsActions 
 
 					instance.log('debug', `Adjusting Sheet: ${action.options.spreadsheet} Cell: ${cell} Value: ${newValue}`)
 					instance.api.adjustCell(spreadsheetID, cell, newValue.toString())
+				}
+			},
+		},
+
+		duplicateSheet: {
+			name: 'Duplicate Sheet',
+			options: [
+				{
+					type: 'dropdown',
+					label: 'Spreadsheet',
+					tooltip: 'Spreadsheet to adjust',
+					id: 'spreadsheet',
+					default: '',
+					choices: [
+						{ label: 'Select Spreadsheet', id: '' },
+						...instance.config.sheetIDs
+							.split(' ')
+							.map((id, index) => {
+								const spreadsheet = instance.data.sheetData.get(id)
+								if (!spreadsheet) return { label: '', id: '' }
+								return {
+									label: spreadsheet.properties.title,
+									id: instance.config.referenceIndex ? index.toString() : id,
+								}
+							})
+							.filter((x) => x.id !== ''),
+					],
+				},
+				{
+					type: 'textinput',
+					label: 'Original Sheet Name',
+					tooltip: 'Name for the sheet to be duplicataed',
+					id: 'duplicateName',
+					default: '',
+					useVariables: true,
+				},
+				{
+					type: 'textinput',
+					label: 'New Sheet Name',
+					tooltip: 'Name for the new sheet',
+					id: 'newName',
+					default: '',
+					useVariables: true,
+				},
+			],
+			callback: async (action) => {
+				const duplicateName = await instance.parseVariablesInString(action.options.duplicateName)
+				const newName = await instance.parseVariablesInString(action.options.newName)
+				const idIndex = parseInt(action.options.spreadsheet)
+				if (isNaN(idIndex)) return
+				const spreadsheetID = instance.config.sheetIDs.split(' ')[idIndex]
+				const spreadsheet = instance.data.sheetData.get(spreadsheetID)
+				if (!spreadsheet) return
+
+				const originalSheet = spreadsheet.sheets.find((sheet: any) => {
+					return sheet.properties.title === duplicateName
+				})
+
+				if (originalSheet) {
+					instance.api.duplicateSheet(
+						spreadsheetID,
+						originalSheet.properties.sheetId,
+						newName,
+						spreadsheet.sheets.length
+					)
+				} else {
+					instance.log('warn', `Unable to find sheet ${duplicateName} to duplicate`)
 				}
 			},
 		},

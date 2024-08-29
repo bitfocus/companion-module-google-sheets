@@ -52,11 +52,11 @@ export const httpHandler = async (
 			instance.log('warn', `OAuth URL: ${oauthURL}`)
 
 			response.status = 302
-      response.headers = { location: oauthURL }
+			response.headers = { location: oauthURL }
 		} else {
 			response.body = JSON.stringify({
 				status: 400,
-				message: 'Config is missing Client ID, Client Secret, and/or Redirect URI'
+				message: 'Config is missing Client ID, Client Secret, and/or Redirect URI',
 			})
 		}
 	}
