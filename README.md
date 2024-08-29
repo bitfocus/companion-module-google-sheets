@@ -13,7 +13,7 @@ considering supporting the continued development of these modules by sponsoring 
 # Recent Patches
 **v1.4.0**
 - Added `Add Sheet` and `Duplicate Sheet` actions
-- Bumped dependency versoins
+- Bumped dependency versions
 
 **v1.3.1**
 - Fixed bug related to Spreadsheet ID
