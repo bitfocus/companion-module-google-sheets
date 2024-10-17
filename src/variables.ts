@@ -67,6 +67,7 @@ export class Variables {
 				let columnCount = 0
 
 				if (sheetName.startsWith(`'`) && sheetName.endsWith(`'`)) sheetName = sheetName.slice(1, -1)
+				sheetName = sheetName.replace(/#/g, '')
 
 				valueRange?.values?.forEach((row: any) => {
 					if (row.length > columnCount) columnCount = row.length

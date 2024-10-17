@@ -1,5 +1,8 @@
 # Path Notes
 
+**v1.4.1**
+- Fixed an issue with certain symbols in sheet names breaking API requests
+
 **v1.4.0**
 - Added `Add Sheet` and `Duplicate Sheet` actions
 - Bumped dependency versions

@@ -158,7 +158,6 @@ export function getActions(instance: GoogleSheetsInstance): GoogleSheetsActions 
 				let newValue: string | number = await instance.parseVariablesInString(action.options.value)
 
 				let spreadsheetID = action.options.spreadsheet
-
 				if (instance.config.referenceIndex) {
 					const idIndex = parseInt(action.options.spreadsheet)
 					if (isNaN(idIndex)) return

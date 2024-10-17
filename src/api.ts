@@ -87,7 +87,9 @@ export class API {
 	 */
 	public adjustCell = async (spreadsheet: string, cell: string, value: string): Promise<void> => {
 		if (!this.ready || !this.instance.config.sheetIDs) return
-		const url = `https://sheets.googleapis.com/v4/spreadsheets/${spreadsheet}/values/${cell}?access_token=${this.instance.config.accessToken}&valueInputOption=USER_ENTERED`
+		const url = `https://sheets.googleapis.com/v4/spreadsheets/${spreadsheet}/values/${encodeURIComponent(
+			cell
+		)}?access_token=${this.instance.config.accessToken}&valueInputOption=USER_ENTERED`
 
 		const body = {
 			range: cell,
@@ -255,6 +257,11 @@ export class API {
 			)
 		})
 
+		if (!sheet) {
+			this.instance.log('debug', `valueRanges - ${JSON.stringify(spreadsheet.valueRanges)} -  ${cellID}`)
+			return null
+		}
+
 		const value = sheet.values[cellIndex.row]?.[cellIndex.col]
 
 		return value !== undefined ? value : null
@@ -300,7 +307,7 @@ export class API {
 			if (!sheet) return
 
 			// Surround title in single quote to prevent Google mistaking Title for Cell
-			const individualSheets = sheet.sheets.map((doc: any) => `'${doc.properties.title}'`)
+			const individualSheets = sheet.sheets.map((doc: any) => `'${encodeURIComponent(doc.properties.title)}'`)
 			const url = `https://sheets.googleapis.com/v4/spreadsheets/${id}/values:batchGet?access_token=${
 				this.instance.config.accessToken
 			}&ranges=${individualSheets.join('&ranges=')}`
@@ -312,7 +319,7 @@ export class API {
 					this.instance.checkFeedbacks('cellValue')
 				})
 				.catch((err) => {
-					this.instance.log('debug', `getSheetValues err: ${err.message}`)
+					this.instance.log('debug', `getSheetValues err: ${err.message} - url: ${url}`)
 					if (err.message.includes('429')) this.rateLimit.incrementRequest('exceeded')
 				})
 		}
