@@ -4,3 +4,4 @@ dist/
 companion.log
 /pkg
 /pkg.tgz
+yarn.lock
