@@ -14,6 +14,7 @@ export interface Config {
 
 	accessToken?: string
 	refreshToken?: string
+	useFirstRowAsColumnNames: boolean
 }
 
 export const getConfigFields = (instance: GoogleSheetsInstance): SomeCompanionConfigField[] => {
@@ -103,5 +104,12 @@ export const getConfigFields = (instance: GoogleSheetsInstance): SomeCompanionCo
 			width: 12,
 			default: false,
 		},
+		{
+            type: 'checkbox',
+            label: 'Use first row as column names (JSON ONLY)',
+            id: 'useFirstRowAsColumnNames',
+            width: 12,
+            default: false,
+        },
 	]
 }

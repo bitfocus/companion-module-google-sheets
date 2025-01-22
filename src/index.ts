@@ -33,6 +33,7 @@ class GoogleSheetsInstance extends InstanceBase<Config> {
 		referenceIndex: false,
 		pollInterval: 1.5,
 		clearTokens: false,
+		useFirstRowAsColumnNames: false,
 	}
 	public data = {
 		sheetData: new Map<string, any>(),

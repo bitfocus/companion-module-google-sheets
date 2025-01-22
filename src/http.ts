@@ -72,25 +72,33 @@ export const httpHandler = async (
 		const title = request.query.sheet
 		const format = request.query?.format || 'json'
 		const spreadsheet = instance.data.sheetValues.get(id)
-
+	
 		if (spreadsheet) {
 			const sheet = spreadsheet.valueRanges.find(
 				(valueRange: any) => title === valueRange.range.split('!')[0] || `'${title}'` === valueRange.range.split('!')[0]
 			)
-
+	
 			if (sheet) {
 				response.status = 200
 				const data: any[] = []
-
+				const useFirstRowAsColumnNames = instance.config.useFirstRowAsColumnNames
+	
 				if (format === 'json') {
+					const columnNames = useFirstRowAsColumnNames ? sheet.values[0] : null
+	
+	
 					sheet.values.forEach((row: any, rowIndex: number) => {
-						data[rowIndex] = {}
-
+						if (useFirstRowAsColumnNames && rowIndex === 0) return // Skip the first row if using as column names
+	
+						const rowData: any = {}
 						row.forEach((value: any, columnIndex: number) => {
-							data[rowIndex][columnIndexToLetter(columnIndex) as string] = value
+							const columnName = useFirstRowAsColumnNames ? columnNames[columnIndex] : columnIndexToLetter(columnIndex)
+							rowData[columnName as string] = value
 						})
+	
+						data.push(rowData)
 					})
-
+	
 					response.body = JSON.stringify(data, null, 2)
 				} else if (format === 'csv') {
 					try {
