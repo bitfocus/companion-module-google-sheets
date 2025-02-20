@@ -6,25 +6,25 @@ import { CompanionAlignment, CompanionButtonPresetOptions, CompanionPresetDefini
 type PresetCategory = ''
 
 export interface GoogleSheetPreset {
-	type: 'button'
-	category: PresetCategory
-	name: string
-	options?: CompanionButtonPresetOptions
-	style: {
-		alignment?: CompanionAlignment
-		bgcolor: number
-		color: number
-		pngalignment?: CompanionAlignment
-		size: 'auto' | '7' | '14' | '18' | '24' | '30' | '44'
-		text: string
-	}
-	actions: ActionCallbacks[]
-	release_actions?: ActionCallbacks[]
-	feedbacks: FeedbackCallbacks[]
+  type: 'button'
+  category: PresetCategory
+  name: string
+  options?: CompanionButtonPresetOptions
+  style: {
+    alignment?: CompanionAlignment
+    bgcolor: number
+    color: number
+    pngalignment?: CompanionAlignment
+    size: 'auto' | '7' | '14' | '18' | '24' | '30' | '44'
+    text: string
+  }
+  actions: ActionCallbacks[]
+  release_actions?: ActionCallbacks[]
+  feedbacks: FeedbackCallbacks[]
 }
 
 export function getPresets(_instance: GoogleSheetsInstance): CompanionPresetDefinitions {
-	const presets: GoogleSheetPreset[] = []
+  const presets: GoogleSheetPreset[] = []
 
-	return presets as unknown as CompanionPresetDefinitions
+  return presets as unknown as CompanionPresetDefinitions
 }

@@ -2,28 +2,28 @@ import { SomeCompanionConfigField } from '@companion-module/base'
 import GoogleSheetsInstance from './index'
 
 export interface Config {
-	//
-	clientID: string
-	clientSecret: string
-	redirectURI: string
-	code: string
-	sheetIDs: string
-	referenceIndex: boolean
-	pollInterval: number
-	clearTokens: boolean
+  //
+  clientID: string
+  clientSecret: string
+  redirectURI: string
+  code: string
+  sheetIDs: string
+  referenceIndex: boolean
+  pollInterval: number
+  clearTokens: boolean
 
-	accessToken?: string
-	refreshToken?: string
+  accessToken?: string
+  refreshToken?: string
 }
 
 export const getConfigFields = (instance: GoogleSheetsInstance): SomeCompanionConfigField[] => {
-	return [
-		{
-			type: 'static-text',
-			id: 'info',
-			width: 12,
-			label: 'Information',
-			value: `This module requires creating an App in Googles Cloud Platform to gain access to read/write Google Sheets.
+  return [
+    {
+      type: 'static-text',
+      id: 'info',
+      width: 12,
+      label: 'Information',
+      value: `This module requires creating an App in Googles Cloud Platform to gain access to read/write Google Sheets.
 				Prerequisite: On the <a href="https://console.cloud.google.com/home/dashboard" target="_blank">Google Cloud Console</a> Create a Project, and in the APIs and services > Enabled APIs and servers, make sure you enable the Google Sheets API.
 				<br/><br />
         1. Go to <a href="https://console.cloud.google.com/apis/credentials" target="_blank">https://console.cloud.google.com/apis/credentials</a>, click 'Create Credentials', and select 'OAuth client ID'
@@ -36,72 +36,72 @@ export const getConfigFields = (instance: GoogleSheetsInstance): SomeCompanionCo
 				<br /><br />
 				5. After visiting the URL, and authorizing the app, you'll be redirected to your Redirect URL. Copy the "code" parameter that's in the URL of the redirect and paste that in the "Code" config below.
 				`,
-		},
-		{
-			type: 'textinput',
-			label: 'Client ID',
-			id: 'clientID',
-			width: 12,
-			default: '',
-		},
-		{
-			type: 'textinput',
-			label: 'Client Secret',
-			id: 'clientSecret',
-			width: 12,
-			default: '',
-		},
-		{
-			type: 'textinput',
-			label: 'Redirect URI',
-			id: 'redirectURI',
-			width: 12,
-			default: '',
-		},
-		{
-			type: 'textinput',
-			label: 'OAuth Code',
-			id: 'code',
-			width: 12,
-			default: '',
-		},
-		{
-			type: 'textinput',
-			label: 'Spreadsheet IDs (space separated)',
-			id: 'sheetIDs',
-			width: 12,
-			default: '',
-		},
-		{
-			type: 'checkbox',
-			label: 'Reference Spreadsheets by Index instead of ID (requires updating actions/feedbacks)',
-			id: 'referenceIndex',
-			width: 12,
-			default: false,
-		},
-		{
-			type: 'static-text',
-			id: 'pollIntervalText',
-			width: 12,
-			label: 'Polling Interval Info',
-			value: `By default Google allows for 1 request per second, but interval may take more 1 or 2 requests per spreadsheet. 
+    },
+    {
+      type: 'textinput',
+      label: 'Client ID',
+      id: 'clientID',
+      width: 12,
+      default: '',
+    },
+    {
+      type: 'textinput',
+      label: 'Client Secret',
+      id: 'clientSecret',
+      width: 12,
+      default: '',
+    },
+    {
+      type: 'textinput',
+      label: 'Redirect URI',
+      id: 'redirectURI',
+      width: 12,
+      default: '',
+    },
+    {
+      type: 'textinput',
+      label: 'OAuth Code',
+      id: 'code',
+      width: 12,
+      default: '',
+    },
+    {
+      type: 'textinput',
+      label: 'Spreadsheet IDs (space separated)',
+      id: 'sheetIDs',
+      width: 12,
+      default: '',
+    },
+    {
+      type: 'checkbox',
+      label: 'Reference Spreadsheets by Index instead of ID (requires updating actions/feedbacks)',
+      id: 'referenceIndex',
+      width: 12,
+      default: false,
+    },
+    {
+      type: 'static-text',
+      id: 'pollIntervalText',
+      width: 12,
+      label: 'Polling Interval Info',
+      value: `By default Google allows for 1 request per second, but interval may take more 1 or 2 requests per spreadsheet. 
 			Because of this, it is recommended to set the interval to around 1.3 x number of spreadsheets to avoid hitting the rate limit (which will start an increase backoff timer if it occurs)`,
-		},
-		{
-			type: 'number',
-			label: 'API Poll Interval in Seconds',
-			id: 'pollInterval',
-			width: 12,
-			default: 1.5,
-			min: 0.1,
-			max: 86400,
-		},
-		{
-			type: 'checkbox',
-			label: 'Clear existing OAuth tokens',
-			id: 'clearTokens',
-			width: 12,
-			default: false,
-		},
-	]
+    },
+    {
+      type: 'number',
+      label: 'API Poll Interval in Seconds',
+      id: 'pollInterval',
+      width: 12,
+      default: 1.5,
+      min: 0.1,
+      max: 86400,
+    },
+    {
+      type: 'checkbox',
+      label: 'Clear existing OAuth tokens',
+      id: 'clearTokens',
+      width: 12,
+      default: false,
+    },
+  ]
 }

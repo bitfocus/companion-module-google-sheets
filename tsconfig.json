@@ -1,7 +1,7 @@
 {
   "compilerOptions": {
     "module": "commonjs",
-    "target": "es2019",
+    "target": "es2021",
     "strict": true,
     "alwaysStrict": false,
     "strictPropertyInitialization": true,
@@ -26,7 +26,7 @@
     "listFiles": false,
     "traceResolution": false,
     "pretty": true,
-    "lib": ["es6", "es2019"],
+    "lib": ["es6", "es2021"],
     "types": ["node"],
     "typeRoots": ["./node_modules/@types", "./types"],
     "esModuleInterop": true,
