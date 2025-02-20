@@ -11,6 +11,9 @@ This module now supports Companions HTTP API, providing endpoints that can be us
 
 
 # Recent Patches
+**v1.5.0**
+- Updated to Node 22, replaced Got depdendency with Fetch
+
 **v1.4.1**
 - Fixed an issue with certain symbols in sheet names breaking API requests
 
