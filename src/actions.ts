@@ -69,6 +69,10 @@ export function getActions(instance: GoogleSheetsInstance): GoogleSheetsActions 
             { label: 'Select Spreadsheet', id: '' },
             ...instance.config.sheetIDs
               .split(' ')
+							.filter((id) => {
+                const spreadsheet = instance.data.sheetData.get(id)
+								return spreadsheet.properties?.title !== undefined
+							})
               .map((id, index) => {
                 const spreadsheet = instance.data.sheetData.get(id)
                 if (!spreadsheet) return { label: '', id: '' }

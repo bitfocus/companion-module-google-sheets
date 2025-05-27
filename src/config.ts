@@ -95,6 +95,7 @@ export const getConfigFields = (instance: GoogleSheetsInstance): SomeCompanionCo
       default: 1.5,
       min: 0.1,
       max: 86400,
+			step: 0.1
     },
     {
       type: 'checkbox',
