@@ -71,7 +71,7 @@ export function getActions(instance: GoogleSheetsInstance): GoogleSheetsActions 
               .split(' ')
 							.filter((id) => {
                 const spreadsheet = instance.data.sheetData.get(id)
-								return spreadsheet.properties?.title !== undefined
+								return spreadsheet?.properties?.title !== undefined
 							})
               .map((id, index) => {
                 const spreadsheet = instance.data.sheetData.get(id)
