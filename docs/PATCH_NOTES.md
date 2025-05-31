@@ -1,5 +1,10 @@
 # Path Notes
 
+**v1.6.0**
+- Added `Clear Sheet` and `Delete Rows or Columns` actions
+- Fixed an crash relating to hitting the Google Rate Limit
+- Updated Variable logic to delete variables for cells that no longer exist (such as when deleting the last row/column)
+
 **v1.5.0**
 - Updated to Node 22, replaced Got dependency with Fetch
 
