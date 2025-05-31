@@ -1,4 +1,4 @@
-import { CompanionActionEvent, SomeCompanionActionInputField } from '@companion-module/base'
+import { CompanionActionEvent, CompanionActionContext, SomeCompanionActionInputField } from '@companion-module/base'
 import GoogleSheetsInstance from './index'
 
 export interface GoogleSheetsActions {
@@ -49,7 +49,7 @@ export interface GoogleSheetsAction<T> {
   name: string
   description?: string
   options: InputFieldWithDefault[]
-  callback: (action: Readonly<Omit<CompanionActionEvent, 'options' | 'id'> & T>) => void | Promise<void>
+  callback: (action: Readonly<Omit<CompanionActionEvent, 'options' | 'id'> & T>, context: CompanionActionContext) => void | Promise<void>
   subscribe?: (action: Readonly<Omit<CompanionActionEvent, 'options' | 'id'> & T>) => void
   unsubscribe?: (action: Readonly<Omit<CompanionActionEvent, 'options' | 'id'> & T>) => void
 }
@@ -93,8 +93,8 @@ export function getActions(instance: GoogleSheetsInstance): GoogleSheetsActions 
           useVariables: true,
         },
       ],
-      callback: async (action) => {
-        const name = await instance.parseVariablesInString(action.options.name)
+      callback: async (action, context) => {
+        const name = await context.parseVariablesInString(action.options.name)
         const idIndex = parseInt(action.options.spreadsheet)
         if (instance.config.referenceIndex && isNaN(idIndex)) return
 
@@ -157,10 +157,10 @@ export function getActions(instance: GoogleSheetsInstance): GoogleSheetsActions 
           useVariables: true,
         },
       ],
-      callback: async (action) => {
-        const cell = await instance.parseVariablesInString(action.options.cell)
+      callback: async (action, context) => {
+        const cell = await context.parseVariablesInString(action.options.cell)
         if (!cell || !cell.includes('!') || action.options.spreadsheet === '') return
-        let newValue: string | number = await instance.parseVariablesInString(action.options.value)
+        let newValue: string | number = await context.parseVariablesInString(action.options.value)
 
         let spreadsheetID = action.options.spreadsheet
         if (instance.config.referenceIndex) {
@@ -237,9 +237,9 @@ export function getActions(instance: GoogleSheetsInstance): GoogleSheetsActions 
           useVariables: true,
         },
       ],
-      callback: async (action) => {
-        const duplicateName = await instance.parseVariablesInString(action.options.duplicateName)
-        const newName = await instance.parseVariablesInString(action.options.newName)
+      callback: async (action, context) => {
+        const duplicateName = await context.parseVariablesInString(action.options.duplicateName)
+        const newName = await context.parseVariablesInString(action.options.newName)
         const idIndex = parseInt(action.options.spreadsheet)
         if (isNaN(idIndex)) return
         const spreadsheetID = instance.config.sheetIDs.split(' ')[idIndex]
