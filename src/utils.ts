@@ -16,7 +16,6 @@ export const columnIndexToLetter = (index: number): string | undefined => {
   return s || undefined
 }
 
-
 /**
  * @param column col letter
  * @returns col index

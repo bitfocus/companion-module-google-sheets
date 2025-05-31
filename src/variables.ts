@@ -1,4 +1,4 @@
-import GoogleSheetsInstance from './'
+import type GoogleSheetsInstance from './'
 import { columnIndexToLetter } from './utils'
 
 type InstanceVariables = Map<string, string | number | undefined>
@@ -122,7 +122,7 @@ export class Variables {
     fullSheetNames.forEach((fullSheetName) => {
       if (!newSheets.includes(fullSheetName)) {
         const sheetRange = this.sheetRange.get(fullSheetName)
-				this.instance.log('debug', `Clearing variables for missing sheet ${fullSheetName}`)
+        this.instance.log('debug', `Clearing variables for missing sheet ${fullSheetName}`)
 
         for (let row = 0; row < sheetRange.rows; row++) {
           for (let column = 0; column < sheetRange.columns; column++) {
@@ -130,7 +130,7 @@ export class Variables {
           }
         }
 
-				this.sheetRange.delete(fullSheetName)
+        this.sheetRange.delete(fullSheetName)
       }
     })
 

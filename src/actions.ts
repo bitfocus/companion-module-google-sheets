@@ -1,11 +1,11 @@
-import { CompanionActionEvent, CompanionActionContext, SomeCompanionActionInputField } from '@companion-module/base'
-import GoogleSheetsInstance from './index'
+import type { CompanionActionEvent, CompanionActionContext, SomeCompanionActionInputField } from '@companion-module/base'
+import type GoogleSheetsInstance from './index'
 import { colToIndex } from './utils'
 
 export interface GoogleSheetsActions {
   addSheet: GoogleSheetsAction<AddSheetCallback>
   adjustCell: GoogleSheetsAction<AdjustCellCallback>
-	clearSheet: GoogleSheetsAction<ClearSheetCallback>
+  clearSheet: GoogleSheetsAction<ClearSheetCallback>
   deleteRowColumn: GoogleSheetsAction<DeleteRowColumnCallback>
   duplicateSheet: GoogleSheetsAction<DuplicateSheetCallback>
 
@@ -32,11 +32,11 @@ interface AdjustCellCallback {
 }
 
 interface ClearSheetCallback {
-	actionId: 'clearSheet'
-	options: Readonly<{
-		spreadsheet: string
-		sheet: string
-	}>
+  actionId: 'clearSheet'
+  options: Readonly<{
+    spreadsheet: string
+    sheet: string
+  }>
 }
 
 interface DeleteRowColumnCallback {
@@ -278,7 +278,7 @@ export function getActions(instance: GoogleSheetsInstance): GoogleSheetsActions 
           return
         }
 
-				instance.api.clearSheet(spreadsheetID, sheetId)
+        instance.api.clearSheet(spreadsheetID, sheetId)
       },
     },
 
@@ -384,8 +384,8 @@ export function getActions(instance: GoogleSheetsInstance): GoogleSheetsActions 
         }
 
         if (action.options.type === 'ROWS') {
-          let start = parseInt(await context.parseVariablesInString(action.options.rowStart))
-          let stop = parseInt(await context.parseVariablesInString(action.options.rowStop))
+          const start = parseInt(await context.parseVariablesInString(action.options.rowStart))
+          const stop = parseInt(await context.parseVariablesInString(action.options.rowStop))
 
           instance.api.deleteRowColumn(spreadsheetID, sheetId, action.options.type, start - 1, stop - 1)
         } else {

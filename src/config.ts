@@ -1,5 +1,5 @@
-import { SomeCompanionConfigField } from '@companion-module/base'
-import GoogleSheetsInstance from './index'
+import type { SomeCompanionConfigField } from '@companion-module/base'
+import type GoogleSheetsInstance from './index'
 
 export interface Config {
   //
@@ -95,7 +95,7 @@ export const getConfigFields = (instance: GoogleSheetsInstance): SomeCompanionCo
       default: 1.5,
       min: 0.1,
       max: 86400,
-			step: 0.1
+      step: 0.1,
     },
     {
       type: 'checkbox',

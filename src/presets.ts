@@ -1,7 +1,7 @@
-import GoogleSheetsInstance from './index'
-import { ActionCallbacks } from './actions'
-import { FeedbackCallbacks } from './feedback'
-import { CompanionAlignment, CompanionButtonPresetOptions, CompanionPresetDefinitions } from '@companion-module/base'
+import type GoogleSheetsInstance from './index'
+import type { ActionCallbacks } from './actions'
+import type { FeedbackCallbacks } from './feedback'
+import type { CompanionAlignment, CompanionButtonPresetOptions, CompanionPresetDefinitions } from '@companion-module/base'
 
 type PresetCategory = ''
 

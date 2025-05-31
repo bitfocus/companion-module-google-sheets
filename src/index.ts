@@ -1,16 +1,10 @@
-import {
-  InstanceBase,
-  runEntrypoint,
-  CompanionActionDefinitions,
-  CompanionFeedbackDefinitions,
-  CompanionHTTPRequest,
-  CompanionHTTPResponse,
-  SomeCompanionConfigField,
-} from '@companion-module/base'
+import type { CompanionActionDefinitions, CompanionFeedbackDefinitions, CompanionHTTPRequest, CompanionHTTPResponse, SomeCompanionConfigField } from '@companion-module/base'
+import { InstanceBase, runEntrypoint } from '@companion-module/base'
 
 import { getActions } from './actions'
 import { API } from './api'
-import { Config, getConfigFields } from './config'
+import type { Config } from './config'
+import { getConfigFields } from './config'
 import { getFeedbacks } from './feedback'
 import { httpHandler } from './http'
 import { getPresets } from './presets'

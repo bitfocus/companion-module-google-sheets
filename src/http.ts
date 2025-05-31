@@ -1,5 +1,5 @@
-import { CompanionHTTPRequest, CompanionHTTPResponse } from '@companion-module/base'
-import GoogleSheetsInstance from './index'
+import type { CompanionHTTPRequest, CompanionHTTPResponse } from '@companion-module/base'
+import type GoogleSheetsInstance from './index'
 import { columnIndexToLetter } from './utils'
 import { Parser } from '@json2csv/plainjs'
 

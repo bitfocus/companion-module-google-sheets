@@ -1,6 +1,5 @@
-import GoogleSheetsInstance from './index'
-import {
-  combineRgb,
+import type GoogleSheetsInstance from './index'
+import type {
   CompanionAdvancedFeedbackResult,
   CompanionFeedbackButtonStyleResult,
   CompanionFeedbackAdvancedEvent,
@@ -8,6 +7,7 @@ import {
   SomeCompanionFeedbackInputField,
   CompanionFeedbackContext,
 } from '@companion-module/base'
+import { combineRgb } from '@companion-module/base'
 
 export interface GoogleSheetsFeedbacks {
   cellValue: GoogleSheetsFeedback<CellValueCallback>

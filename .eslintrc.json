@@ -5,6 +5,7 @@
     "prettier/prettier": "error",
     "no-use-before-define": "off"
   },
+  "ignorePatterns": ["tests/**"],
   "env": { "es2017": true },
   "parserOptions": { "sourceType": "module", "ecmaVersion": 2018 },
   "overrides": [
@@ -28,7 +29,7 @@
         "@typescript-eslint/ban-ts-ignore": "off",
         "@typescript-eslint/explicit-function-return-type": "off",
         "@typescript-eslint/no-explicit-any": "off",
-        "@typescript-eslint/no-non-null-assertion": "off"
+        "@typescript-eslint/no-unused-expressions": "off"
       }
     },
     {

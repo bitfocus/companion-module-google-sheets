@@ -1,4 +1,4 @@
-import GoogleSheetsInstance from './'
+import type GoogleSheetsInstance from './'
 import { cellToIndex } from './utils'
 import { InstanceStatus } from '@companion-module/base'
 
