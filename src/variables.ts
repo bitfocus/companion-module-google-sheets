@@ -8,6 +8,7 @@ export class Variables {
   private readonly instance: GoogleSheetsInstance
   private currentVariables: InstanceVariables = new Map()
   private currentDefinitions: instanceDefinitions = new Map()
+  private sheetRange = new Map()
 
   constructor(instance: GoogleSheetsInstance) {
     this.instance = instance
@@ -61,15 +62,40 @@ export class Variables {
 
       spreadsheet.valueRanges?.forEach((valueRange: any) => {
         let sheetName = valueRange.range.split('!')[0]
-        const rowCount = valueRange?.values?.length || 0
-        let columnCount = 0
-
         if (sheetName.startsWith(`'`) && sheetName.endsWith(`'`)) sheetName = sheetName.slice(1, -1)
         sheetName = sheetName.replace(/#/g, '')
+
+        const previousRange = this.sheetRange.get(sheetName)
+        const previousRowCount = previousRange ? previousRange.rows : 0
+        const previousColCount = previousRange ? previousRange.columns : 0
+
+        const rowCount = valueRange?.values?.length || 0
+        let columnCount = 0
 
         valueRange?.values?.forEach((row: any) => {
           if (row.length > columnCount) columnCount = row.length
         })
+
+				// Clear removed rows/columns
+        if (rowCount < previousRowCount || columnCount < previousColCount) {
+          if (rowCount < previousRowCount) {
+            for (let row = rowCount; row < previousRowCount; row++) {
+              for (let column = 0; column < previousColCount; column++) {
+                newVariables.set(`${title}_${sheetName}!${columnIndexToLetter(column)}${row + 1}`, undefined)
+              }
+            }
+          }
+
+          if (columnCount < previousColCount) {
+            for (let column = columnCount; column < previousColCount; column++) {
+              for (let row = 0; row < previousRowCount; row++) {
+                newVariables.set(`${title}_${sheetName}!${columnIndexToLetter(column)}${row + 1}`, undefined)
+              }
+            }
+          }
+        }
+
+        this.sheetRange.set(sheetName, { rows: rowCount, columns: columnCount })
 
         // For empty sheets without values, set a default empty example
         if (valueRange.values === undefined) {
@@ -113,7 +139,7 @@ export class Variables {
     const changedVariables: { [variableId: string]: string | number | undefined } = {}
     newVariables.forEach((value, variableId) => {
       if (this.currentVariables.get(variableId) !== value)
-        changedVariables[variableId.replace(/ /g, '_').replace(/!/g, '_').replace(/'/g, '').replace(/\(/g, '').replace(/\)/g, '')] = value + ''
+        changedVariables[variableId.replace(/ /g, '_').replace(/!/g, '_').replace(/'/g, '').replace(/\(/g, '').replace(/\)/g, '')] = value === undefined ? undefined : value + ''
     })
 
     if (Object.keys(changedVariables).length > 0) {
