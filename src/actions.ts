@@ -223,7 +223,7 @@ export function getActions(instance: GoogleSheetsInstance): GoogleSheetsActions 
         {
           type: 'textinput',
           label: 'Original Sheet Name',
-          tooltip: 'Name for the sheet to be duplicataed',
+          tooltip: 'Name for the sheet to be duplicated',
           id: 'duplicateName',
           default: '',
           useVariables: true,
