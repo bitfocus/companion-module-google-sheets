@@ -20,6 +20,7 @@ export class Variables {
   public readonly updateVariables = (): void => {
     const newDefinitions: instanceDefinitions = new Map()
     const newVariables: InstanceVariables = new Map()
+    const newSheets: string[] = []
 
     newDefinitions.set('read_requests', 'Read Requests per Min')
     newVariables.set(
@@ -64,8 +65,9 @@ export class Variables {
         let sheetName = valueRange.range.split('!')[0]
         if (sheetName.startsWith(`'`) && sheetName.endsWith(`'`)) sheetName = sheetName.slice(1, -1)
         sheetName = sheetName.replace(/#/g, '')
+        newSheets.push(`${title}_${sheetName}`)
 
-        const previousRange = this.sheetRange.get(sheetName)
+        const previousRange = this.sheetRange.get(`${title}_${sheetName}`)
         const previousRowCount = previousRange ? previousRange.rows : 0
         const previousColCount = previousRange ? previousRange.columns : 0
 
@@ -76,7 +78,7 @@ export class Variables {
           if (row.length > columnCount) columnCount = row.length
         })
 
-				// Clear removed rows/columns
+        // Clear removed rows/columns
         if (rowCount < previousRowCount || columnCount < previousColCount) {
           if (rowCount < previousRowCount) {
             for (let row = rowCount; row < previousRowCount; row++) {
@@ -95,7 +97,7 @@ export class Variables {
           }
         }
 
-        this.sheetRange.set(sheetName, { rows: rowCount, columns: columnCount })
+        this.sheetRange.set(`${title}_${sheetName}`, { rows: rowCount, columns: columnCount })
 
         // For empty sheets without values, set a default empty example
         if (valueRange.values === undefined) {
@@ -113,6 +115,23 @@ export class Variables {
           }
         }
       })
+    })
+
+    // Clear removed sheets
+    const fullSheetNames = [...this.sheetRange.keys()]
+    fullSheetNames.forEach((fullSheetName) => {
+      if (!newSheets.includes(fullSheetName)) {
+        const sheetRange = this.sheetRange.get(fullSheetName)
+				this.instance.log('debug', `Clearing variables for missing sheet ${fullSheetName}`)
+
+        for (let row = 0; row < sheetRange.rows; row++) {
+          for (let column = 0; column < sheetRange.columns; column++) {
+            newVariables.set(`${fullSheetName}!${columnIndexToLetter(column)}${row + 1}`, undefined)
+          }
+        }
+
+				this.sheetRange.delete(fullSheetName)
+      }
     })
 
     let definitionChange = false
