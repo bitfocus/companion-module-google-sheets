@@ -130,6 +130,90 @@ export class API {
       })
   }
 
+  public clearSheet = async (spreadsheet: string, sheet: number): Promise<void> => {
+    if (!this.ready || !this.instance.config.sheetIDs) return
+    const url = `https://sheets.googleapis.com/v4/spreadsheets/${spreadsheet}:batchUpdate?access_token=${this.instance.config.accessToken}`
+
+    const body = {
+      requests: [
+        {
+          updateCells: {
+            range: {
+              sheetId: sheet,
+            },
+            fields: 'userEnteredValue',
+          },
+        },
+      ],
+    }
+
+    const options = {
+      method: 'POST',
+      body: JSON.stringify(body),
+    }
+
+    return fetch(url, options)
+      .then(async (res) => res.json())
+      .then((res: any) => {
+        if (res.error) {
+          if (res.error.code === 429) {
+            this.instance.log('warn', 'Rate Limit exceeded')
+            this.rateLimit.incrementRequest('exceeded')
+          } else {
+            this.instance.log('warn', `API Error ${res.error.code}: ${res.error.message}`)
+          }
+          this.instance.log('debug', res.error.message)
+        }
+      })
+      .catch((err) => {
+        this.instance.log('debug', `clearSheet err: ${err.message} - url: ${url}`)
+        if (err.message.includes('429')) this.rateLimit.incrementRequest('exceeded')
+      })
+  }
+
+  public deleteRowColumn = async (spreadsheet: string, sheet: number, type: 'ROWS' | 'COLUMNS', start: number, stop: number): Promise<void> => {
+    if (!this.ready || !this.instance.config.sheetIDs) return
+    const url = `https://sheets.googleapis.com/v4/spreadsheets/${spreadsheet}:batchUpdate?access_token=${this.instance.config.accessToken}`
+
+    const body = {
+      requests: [
+        {
+          deleteDimension: {
+            range: {
+              sheetId: sheet,
+              dimension: type,
+              startIndex: start,
+              endIndex: stop,
+            },
+          },
+        },
+      ],
+    }
+
+    const options = {
+      method: 'POST',
+      body: JSON.stringify(body),
+    }
+
+    return fetch(url, options)
+      .then(async (res) => res.json())
+      .then((res: any) => {
+        if (res.error) {
+          if (res.error.code === 429) {
+            this.instance.log('warn', 'Rate Limit exceeded')
+            this.rateLimit.incrementRequest('exceeded')
+          } else {
+            this.instance.log('warn', `API Error ${res.error.code}: ${res.error.message}`)
+          }
+          this.instance.log('debug', res.error.message)
+        }
+      })
+      .catch((err) => {
+        this.instance.log('debug', `deleteRowColumn err: ${err.message} - url: ${url}`)
+        if (err.message.includes('429')) this.rateLimit.incrementRequest('exceeded')
+      })
+  }
+
   /**
    * @description API request to duplicate a sheet
    */

@@ -16,23 +16,29 @@ export const columnIndexToLetter = (index: number): string | undefined => {
   return s || undefined
 }
 
+
+/**
+ * @param column col letter
+ * @returns col index
+ * @description Translates a column letter to its index
+ */
+export const colToIndex = (col: string): number | null => {
+  if (typeof col !== 'string' || col.length > 2) return null
+
+  const A = 'A'.charCodeAt(0)
+  let number = col.charCodeAt(col.length - 1) - A
+
+  if (col.length == 2) number += 26 * (col.charCodeAt(0) - A + 1)
+
+  return number
+}
+
 /**
  * @param cell A1 notation
  * @returns row and col index
  * @description Parses a cell in A1 notation to a row and col index
  */
 export const cellToIndex = (cell: string): { col: number; row: number } | null => {
-  const colToIndex = (col: string): number | null => {
-    if (typeof col !== 'string' || col.length > 2) return null
-
-    const A = 'A'.charCodeAt(0)
-    let number = col.charCodeAt(col.length - 1) - A
-
-    if (col.length == 2) number += 26 * (col.charCodeAt(0) - A + 1)
-
-    return number
-  }
-
   const rowToIndex = (row: string): number => {
     return parseInt(row, 10) - 1
   }

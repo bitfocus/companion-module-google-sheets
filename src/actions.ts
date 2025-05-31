@@ -1,9 +1,12 @@
 import { CompanionActionEvent, CompanionActionContext, SomeCompanionActionInputField } from '@companion-module/base'
 import GoogleSheetsInstance from './index'
+import { colToIndex } from './utils'
 
 export interface GoogleSheetsActions {
   addSheet: GoogleSheetsAction<AddSheetCallback>
   adjustCell: GoogleSheetsAction<AdjustCellCallback>
+	clearSheet: GoogleSheetsAction<ClearSheetCallback>
+  deleteRowColumn: GoogleSheetsAction<DeleteRowColumnCallback>
   duplicateSheet: GoogleSheetsAction<DuplicateSheetCallback>
 
   // Index signature
@@ -28,6 +31,27 @@ interface AdjustCellCallback {
   }>
 }
 
+interface ClearSheetCallback {
+	actionId: 'clearSheet'
+	options: Readonly<{
+		spreadsheet: string
+		sheet: string
+	}>
+}
+
+interface DeleteRowColumnCallback {
+  actionId: 'deleteRowColumn'
+  options: Readonly<{
+    spreadsheet: string
+    sheet: string
+    type: 'ROWS' | 'COLUMNS'
+    rowStart: string
+    rowStop: string
+    columnStart: string
+    columnStop: string
+  }>
+}
+
 interface DuplicateSheetCallback {
   actionId: 'duplicateSheet'
   options: Readonly<{
@@ -37,7 +61,7 @@ interface DuplicateSheetCallback {
   }>
 }
 
-export type ActionCallbacks = AddSheetCallback | AdjustCellCallback | DuplicateSheetCallback
+export type ActionCallbacks = AddSheetCallback | AdjustCellCallback | DeleteRowColumnCallback | DuplicateSheetCallback
 
 // Force options to have a default to prevent sending undefined values
 type InputFieldWithDefault = Exclude<SomeCompanionActionInputField, 'default'> & {
@@ -69,10 +93,10 @@ export function getActions(instance: GoogleSheetsInstance): GoogleSheetsActions 
             { label: 'Select Spreadsheet', id: '' },
             ...instance.config.sheetIDs
               .split(' ')
-							.filter((id) => {
+              .filter((id) => {
                 const spreadsheet = instance.data.sheetData.get(id)
-								return spreadsheet?.properties?.title !== undefined
-							})
+                return spreadsheet?.properties?.title !== undefined
+              })
               .map((id, index) => {
                 const spreadsheet = instance.data.sheetData.get(id)
                 if (!spreadsheet) return { label: '', id: '' }
@@ -192,6 +216,199 @@ export function getActions(instance: GoogleSheetsInstance): GoogleSheetsActions 
 
           instance.log('debug', `Adjusting Sheet: ${action.options.spreadsheet} Cell: ${cell} Value: ${newValue}`)
           instance.api.adjustCell(spreadsheetID, cell, newValue.toString())
+        }
+      },
+    },
+
+    clearSheet: {
+      name: 'Clear Sheet',
+      options: [
+        {
+          type: 'dropdown',
+          label: 'Spreadsheet',
+          tooltip: 'Spreadsheet to adjust',
+          id: 'spreadsheet',
+          default: '',
+          choices: [
+            { label: 'Select Spreadsheet', id: '' },
+            ...instance.config.sheetIDs
+              .split(' ')
+              .filter((id) => {
+                const spreadsheet = instance.data.sheetData.get(id)
+                return spreadsheet?.properties?.title !== undefined
+              })
+              .map((id, index) => {
+                const spreadsheet = instance.data.sheetData.get(id)
+                if (!spreadsheet) return { label: '', id: '' }
+                return {
+                  label: spreadsheet.properties.title,
+                  id: instance.config.referenceIndex ? index.toString() : id,
+                }
+              })
+              .filter((x) => x.id !== ''),
+          ],
+        },
+        {
+          type: 'textinput',
+          label: 'Sheet to clear',
+          id: 'sheet',
+          default: '',
+          useVariables: true,
+        },
+      ],
+      callback: async (action, context) => {
+        let spreadsheetID = action.options.spreadsheet
+        if (instance.config.referenceIndex) {
+          const idIndex = parseInt(action.options.spreadsheet)
+          if (isNaN(idIndex)) return
+          spreadsheetID = instance.config.sheetIDs.split(' ')[idIndex]
+          if (spreadsheetID === undefined) return
+        }
+
+        const sheetName = await context.parseVariablesInString(action.options.sheet)
+        let sheetId
+
+        const sheetData = instance.data.sheetData.get(spreadsheetID)
+        sheetData.sheets.forEach((sheet: any) => {
+          if (sheet?.properties?.title === sheetName) sheetId = sheet?.properties?.sheetId
+        })
+
+        if (sheetId === undefined) {
+          instance.log('warn', 'Invalid sheet name')
+          return
+        }
+
+				instance.api.clearSheet(spreadsheetID, sheetId)
+      },
+    },
+
+    deleteRowColumn: {
+      name: 'Delete Rows or Columns',
+      options: [
+        {
+          type: 'dropdown',
+          label: 'Spreadsheet',
+          tooltip: 'Spreadsheet to adjust',
+          id: 'spreadsheet',
+          default: '',
+          choices: [
+            { label: 'Select Spreadsheet', id: '' },
+            ...instance.config.sheetIDs
+              .split(' ')
+              .map((id, index) => {
+                const spreadsheet = instance.data.sheetData.get(id)
+                if (!spreadsheet) return { label: '', id: '' }
+                return {
+                  label: spreadsheet.properties.title,
+                  id: instance.config.referenceIndex ? index.toString() : id,
+                }
+              })
+              .filter((x) => x.id !== ''),
+          ],
+        },
+        {
+          type: 'textinput',
+          label: 'Sheet Name',
+          id: 'sheet',
+          default: '',
+          useVariables: true,
+        },
+        {
+          type: 'dropdown',
+          label: 'Type',
+          tooltip: 'Type to delete',
+          id: 'type',
+          default: 'ROWS',
+          choices: [
+            { label: 'Rows', id: 'ROWS' },
+            { label: 'Columns', id: 'COLUMNS' },
+          ],
+        },
+        {
+          type: 'textinput',
+          label: 'Row Start',
+          tooltip: 'Starting Row Number',
+          id: 'rowStart',
+          default: '',
+          useVariables: true,
+          isVisible: (options) => options.type === 'ROWS',
+        },
+        {
+          type: 'textinput',
+          label: 'Row Stop (non-inclusive)',
+          tooltip: 'Stop Row Number',
+          id: 'rowStop',
+          default: '',
+          useVariables: true,
+          isVisible: (options) => options.type === 'ROWS',
+        },
+        {
+          type: 'textinput',
+          label: 'Column Start',
+          tooltip: 'Starting Column Letter or Number',
+          id: 'columnStart',
+          default: '',
+          useVariables: true,
+          isVisible: (options) => options.type === 'COLUMNS',
+        },
+        {
+          type: 'textinput',
+          label: 'Column Stop (non-inclusive)',
+          tooltip: 'Stop Column Letter or Number',
+          id: 'columnStop',
+          default: '',
+          useVariables: true,
+          isVisible: (options) => options.type === 'COLUMNS',
+        },
+      ],
+      callback: async (action, context) => {
+        let spreadsheetID = action.options.spreadsheet
+        if (instance.config.referenceIndex) {
+          const idIndex = parseInt(action.options.spreadsheet)
+          if (isNaN(idIndex)) return
+          spreadsheetID = instance.config.sheetIDs.split(' ')[idIndex]
+          if (spreadsheetID === undefined) return
+        }
+
+        const sheetName = await context.parseVariablesInString(action.options.sheet)
+        let sheetId
+
+        const sheetData = instance.data.sheetData.get(spreadsheetID)
+        sheetData.sheets.forEach((sheet: any) => {
+          if (sheet?.properties?.title === sheetName) sheetId = sheet?.properties?.sheetId
+        })
+
+        if (sheetId === undefined) {
+          instance.log('warn', 'Invalid sheet name')
+          return
+        }
+
+        if (action.options.type === 'ROWS') {
+          let start = parseInt(await context.parseVariablesInString(action.options.rowStart))
+          let stop = parseInt(await context.parseVariablesInString(action.options.rowStop))
+
+          instance.api.deleteRowColumn(spreadsheetID, sheetId, action.options.type, start - 1, stop - 1)
+        } else {
+          let start: string | number | null = await context.parseVariablesInString(action.options.columnStart)
+          let stop: string | number | null = await context.parseVariablesInString(action.options.columnStop)
+
+          if (isNaN(parseInt(start))) {
+            start = colToIndex(start)
+          } else {
+            start = parseInt(start) - 1
+          }
+
+          if (isNaN(parseInt(stop))) {
+            stop = colToIndex(stop)
+          } else {
+            stop = parseInt(stop) - 1
+          }
+
+          if (start !== null && stop !== null && start < stop) {
+            instance.api.deleteRowColumn(spreadsheetID, sheetId, action.options.type, start, stop)
+          } else {
+            instance.log('warn', 'Invalid start and stop indexes')
+          }
         }
       },
     },
