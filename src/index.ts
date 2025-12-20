@@ -48,10 +48,6 @@ class GoogleSheetsInstance extends InstanceBase<Config> {
     this.updateInstance()
 
     await this.configUpdated(config)
-    this.log(
-      'info',
-      'Companion 3 makes some changes to Instance Variables, and limits certain symbols being used, such as !, so please check your variables are working and look at the examples showing how to reference A1 variable in each sheet',
-    )
   }
 
   /**
