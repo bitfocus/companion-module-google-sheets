@@ -67,6 +67,8 @@ export class API {
       responseIncludeGridData: false,
     }
 
+    this.instance.log('debug', `Attempting to Add Sheet: ${JSON.stringify(body)}`)
+
     fetch(url, { method: 'POST', body: JSON.stringify(body) })
       .then(async (res) => res.json())
       .then((res: any) => {
@@ -108,6 +110,8 @@ export class API {
       range: cell,
       values: [[value]],
     }
+
+    this.instance.log('debug', `Adjusting Sheet: ${spreadsheet} Cell: ${cell} Value: ${value}`)
 
     fetch(url, { method: 'PUT', body: JSON.stringify(body) })
       .then(async (res) => res.json())
@@ -151,6 +155,8 @@ export class API {
       method: 'POST',
       body: JSON.stringify(body),
     }
+
+    this.instance.log('debug', `Attempting to Clear Sheet: ${spreadsheet} Sheet: ${sheet}`)
 
     return fetch(url, options)
       .then(async (res) => res.json())
@@ -506,5 +512,24 @@ export class API {
     this.pollAPIInterval = setTimeout(() => {
       this.pollAPI()
     }, delay)
+  }
+
+  public getSpreadsheetID = (id: string): string | null => {
+		let spreadsheetID = null
+    const spreadsheetCheck = this.instance.config.sheetIDs.split(' ').includes(id)
+
+    if (spreadsheetCheck) spreadsheetID = id
+
+    if (this.instance.config.referenceIndex && !spreadsheetID) {
+      const index = parseInt(id)
+      spreadsheetID = this.instance.config.sheetIDs.split(' ')[index]
+    }
+
+    if (!spreadsheetID) {
+      this.instance.log('warn', `Unable to find Spreadsheet ${id}`)
+      return null
+    }
+
+		return spreadsheetID
   }
 }

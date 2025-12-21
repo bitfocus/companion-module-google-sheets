@@ -44,11 +44,11 @@ export class Variables {
     newVariables.set('backoff_timer', this.instance.api.rateLimit.backoff)
 
     this.instance.data.sheetValues.forEach((spreadsheet, id) => {
-      const title = this.instance.config.referenceIndex ? this.instance.config.sheetIDs.split(' ').indexOf(id) : spreadsheet.properties.title
+      const title = this.instance.config.referenceIndexVariables ? this.instance.config.sheetIDs.split(' ').indexOf(id) : spreadsheet.properties.title
       newDefinitions.set(`${title}_id`, `Spreadsheet ${title} ID`)
       newVariables.set(`${title}_id`, spreadsheet.spreadsheetId)
 
-      if (this.instance.config.referenceIndex) {
+      if (this.instance.config.referenceIndexVariables) {
         newDefinitions.set(`${title}_title`, `Spreadsheet ${title} Title`)
         newVariables.set(`${title}_title`, spreadsheet.properties.title)
       } else {

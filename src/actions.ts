@@ -118,13 +118,11 @@ export function getActions(instance: GoogleSheetsInstance): GoogleSheetsActions 
         },
       ],
       callback: async (action, context) => {
+        let spreadsheetID = instance.api.getSpreadsheetID(action.options.spreadsheet)
+        if (spreadsheetID === null) return
         const name = await context.parseVariablesInString(action.options.name)
-        const idIndex = parseInt(action.options.spreadsheet)
-        if (instance.config.referenceIndex && isNaN(idIndex)) return
 
-        const spreadsheetID = instance.config.sheetIDs.split(' ')[idIndex]
-
-        instance.api.addSheet(spreadsheetID, name)
+        return instance.api.addSheet(spreadsheetID, name)
       },
     },
 
@@ -182,17 +180,13 @@ export function getActions(instance: GoogleSheetsInstance): GoogleSheetsActions 
         },
       ],
       callback: async (action, context) => {
+        let spreadsheetID = instance.api.getSpreadsheetID(action.options.spreadsheet)
+        if (spreadsheetID === null) return
+
         const cell = await context.parseVariablesInString(action.options.cell)
         if (!cell || !cell.includes('!') || action.options.spreadsheet === '') return
-        let newValue: string | number = await context.parseVariablesInString(action.options.value)
 
-        let spreadsheetID = action.options.spreadsheet
-        if (instance.config.referenceIndex) {
-          const idIndex = parseInt(action.options.spreadsheet)
-          if (isNaN(idIndex)) return
-          spreadsheetID = instance.config.sheetIDs.split(' ')[idIndex]
-          if (spreadsheetID === undefined) return
-        }
+        let newValue: string | number = await context.parseVariablesInString(action.options.value)
 
         if (action.options.type === 'Set') {
           instance.log('debug', `Setting Sheet: ${spreadsheetID} Cell: ${cell} Value: ${newValue}`)
@@ -214,7 +208,6 @@ export function getActions(instance: GoogleSheetsInstance): GoogleSheetsActions 
             newValue = parseFloat(cellValue) - newValue
           }
 
-          instance.log('debug', `Adjusting Sheet: ${action.options.spreadsheet} Cell: ${cell} Value: ${newValue}`)
           instance.api.adjustCell(spreadsheetID, cell, newValue.toString())
         }
       },
@@ -257,13 +250,8 @@ export function getActions(instance: GoogleSheetsInstance): GoogleSheetsActions 
         },
       ],
       callback: async (action, context) => {
-        let spreadsheetID = action.options.spreadsheet
-        if (instance.config.referenceIndex) {
-          const idIndex = parseInt(action.options.spreadsheet)
-          if (isNaN(idIndex)) return
-          spreadsheetID = instance.config.sheetIDs.split(' ')[idIndex]
-          if (spreadsheetID === undefined) return
-        }
+        let spreadsheetID = instance.api.getSpreadsheetID(action.options.spreadsheet)
+        if (spreadsheetID === null) return
 
         const sheetName = await context.parseVariablesInString(action.options.sheet)
         let sheetId
@@ -362,13 +350,8 @@ export function getActions(instance: GoogleSheetsInstance): GoogleSheetsActions 
         },
       ],
       callback: async (action, context) => {
-        let spreadsheetID = action.options.spreadsheet
-        if (instance.config.referenceIndex) {
-          const idIndex = parseInt(action.options.spreadsheet)
-          if (isNaN(idIndex)) return
-          spreadsheetID = instance.config.sheetIDs.split(' ')[idIndex]
-          if (spreadsheetID === undefined) return
-        }
+        let spreadsheetID = instance.api.getSpreadsheetID(action.options.spreadsheet)
+        if (spreadsheetID === null) return
 
         const sheetName = await context.parseVariablesInString(action.options.sheet)
         let sheetId
@@ -455,11 +438,11 @@ export function getActions(instance: GoogleSheetsInstance): GoogleSheetsActions 
         },
       ],
       callback: async (action, context) => {
+        let spreadsheetID = instance.api.getSpreadsheetID(action.options.spreadsheet)
+        if (spreadsheetID === null) return
+
         const duplicateName = await context.parseVariablesInString(action.options.duplicateName)
         const newName = await context.parseVariablesInString(action.options.newName)
-        const idIndex = parseInt(action.options.spreadsheet)
-        if (isNaN(idIndex)) return
-        const spreadsheetID = instance.config.sheetIDs.split(' ')[idIndex]
         const spreadsheet = instance.data.sheetData.get(spreadsheetID)
         if (!spreadsheet) return
 

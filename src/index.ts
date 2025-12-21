@@ -25,6 +25,7 @@ class GoogleSheetsInstance extends InstanceBase<Config> {
     code: '',
     sheetIDs: '',
     referenceIndex: false,
+    referenceIndexVariables: false,
     pollInterval: 1.5,
     clearTokens: false,
   }

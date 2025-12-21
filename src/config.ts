@@ -9,6 +9,7 @@ export interface Config {
   code: string
   sheetIDs: string
   referenceIndex: boolean
+	referenceIndexVariables: boolean
   pollInterval: number
   clearTokens: boolean
 
@@ -74,8 +75,15 @@ export const getConfigFields = (instance: GoogleSheetsInstance): SomeCompanionCo
     },
     {
       type: 'checkbox',
-      label: 'Reference Spreadsheets by Index instead of ID (requires updating actions/feedbacks)',
+      label: 'Reference Spreadsheets by Index instead of ID for Actions/Feedbacks (requires updating Actions/Feedbacks when changed)',
       id: 'referenceIndex',
+      width: 12,
+      default: false,
+    },
+    {
+      type: 'checkbox',
+      label: 'Reference Spreadsheets by Index instead of ID for Variables (requires updating Variables when changed)',
+      id: 'referenceIndexVariables',
       width: 12,
       default: false,
     },
