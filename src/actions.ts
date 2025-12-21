@@ -118,7 +118,7 @@ export function getActions(instance: GoogleSheetsInstance): GoogleSheetsActions 
         },
       ],
       callback: async (action, context) => {
-        let spreadsheetID = instance.api.getSpreadsheetID(action.options.spreadsheet)
+        const spreadsheetID = instance.api.getSpreadsheetID(action.options.spreadsheet)
         if (spreadsheetID === null) return
         const name = await context.parseVariablesInString(action.options.name)
 
@@ -180,7 +180,7 @@ export function getActions(instance: GoogleSheetsInstance): GoogleSheetsActions 
         },
       ],
       callback: async (action, context) => {
-        let spreadsheetID = instance.api.getSpreadsheetID(action.options.spreadsheet)
+        const spreadsheetID = instance.api.getSpreadsheetID(action.options.spreadsheet)
         if (spreadsheetID === null) return
 
         const cell = await context.parseVariablesInString(action.options.cell)
@@ -250,7 +250,7 @@ export function getActions(instance: GoogleSheetsInstance): GoogleSheetsActions 
         },
       ],
       callback: async (action, context) => {
-        let spreadsheetID = instance.api.getSpreadsheetID(action.options.spreadsheet)
+        const spreadsheetID = instance.api.getSpreadsheetID(action.options.spreadsheet)
         if (spreadsheetID === null) return
 
         const sheetName = await context.parseVariablesInString(action.options.sheet)
@@ -350,7 +350,7 @@ export function getActions(instance: GoogleSheetsInstance): GoogleSheetsActions 
         },
       ],
       callback: async (action, context) => {
-        let spreadsheetID = instance.api.getSpreadsheetID(action.options.spreadsheet)
+        const spreadsheetID = instance.api.getSpreadsheetID(action.options.spreadsheet)
         if (spreadsheetID === null) return
 
         const sheetName = await context.parseVariablesInString(action.options.sheet)
@@ -438,7 +438,7 @@ export function getActions(instance: GoogleSheetsInstance): GoogleSheetsActions 
         },
       ],
       callback: async (action, context) => {
-        let spreadsheetID = instance.api.getSpreadsheetID(action.options.spreadsheet)
+        const spreadsheetID = instance.api.getSpreadsheetID(action.options.spreadsheet)
         if (spreadsheetID === null) return
 
         const duplicateName = await context.parseVariablesInString(action.options.duplicateName)

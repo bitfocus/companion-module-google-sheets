@@ -515,7 +515,7 @@ export class API {
   }
 
   public getSpreadsheetID = (id: string): string | null => {
-		let spreadsheetID = null
+    let spreadsheetID = null
     const spreadsheetCheck = this.instance.config.sheetIDs.split(' ').includes(id)
 
     if (spreadsheetCheck) spreadsheetID = id
@@ -530,6 +530,6 @@ export class API {
       return null
     }
 
-		return spreadsheetID
+    return spreadsheetID
   }
 }

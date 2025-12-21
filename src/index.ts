@@ -1,4 +1,11 @@
-import type { CompanionActionDefinitions, CompanionFeedbackDefinitions, CompanionPresetDefinitions, CompanionHTTPRequest, CompanionHTTPResponse, SomeCompanionConfigField } from '@companion-module/base'
+import type {
+  CompanionActionDefinitions,
+  CompanionFeedbackDefinitions,
+  CompanionPresetDefinitions,
+  CompanionHTTPRequest,
+  CompanionHTTPResponse,
+  SomeCompanionConfigField,
+} from '@companion-module/base'
 import { InstanceBase, runEntrypoint } from '@companion-module/base'
 
 import { getActions } from './actions'
@@ -33,9 +40,9 @@ class GoogleSheetsInstance extends InstanceBase<Config> {
     sheetData: new Map<string, any>(),
     sheetValues: new Map<string, any>(),
   }
-	private actionCache: CompanionActionDefinitions = {}
-	private feedbackCache: CompanionFeedbackDefinitions = {}
-	private presetCache: CompanionPresetDefinitions = {}
+  private actionCache: CompanionActionDefinitions = {}
+  private feedbackCache: CompanionFeedbackDefinitions = {}
+  private presetCache: CompanionPresetDefinitions = {}
 
   constructor(internal: unknown) {
     super(internal)
@@ -102,22 +109,22 @@ class GoogleSheetsInstance extends InstanceBase<Config> {
   public async updateInstance(): Promise<void> {
     const actions = getActions(this) as CompanionActionDefinitions
     const feedbacks = getFeedbacks(this) as CompanionFeedbackDefinitions
-		const presets = getPresets(this) as CompanionPresetDefinitions
+    const presets = getPresets(this)
 
-		if (JSON.stringify(actions) !== JSON.stringify(this.actionCache)) {
-			this.actionCache = actions
-			this.setActionDefinitions(actions)
-		}
+    if (JSON.stringify(actions) !== JSON.stringify(this.actionCache)) {
+      this.actionCache = actions
+      this.setActionDefinitions(actions)
+    }
     if (JSON.stringify(feedbacks) !== JSON.stringify(this.feedbackCache)) {
-			this.feedbackCache = feedbacks
-			this.setFeedbackDefinitions(feedbacks)
-		}
+      this.feedbackCache = feedbacks
+      this.setFeedbackDefinitions(feedbacks)
+    }
 
     if (JSON.stringify(presets) !== JSON.stringify(this.presetCache)) {
-			this.presetCache = presets
-			this.setPresetDefinitions(presets)
-		}
-		
+      this.presetCache = presets
+      this.setPresetDefinitions(presets)
+    }
+
     this.variables.updateVariables()
   }
 

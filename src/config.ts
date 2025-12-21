@@ -9,7 +9,7 @@ export interface Config {
   code: string
   sheetIDs: string
   referenceIndex: boolean
-	referenceIndexVariables: boolean
+  referenceIndexVariables: boolean
   pollInterval: number
   clearTokens: boolean
 

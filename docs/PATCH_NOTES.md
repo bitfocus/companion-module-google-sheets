@@ -1,5 +1,10 @@
 # Path Notes
 
+**v1.7.0**
+- Added separate config options for Action/Feedback options and Variables for referencing by index instead of ID
+- Fixed an issue with parsing spreadsheet IDs
+- Added caching for Action/Feedback definitions to reduce updates being sent from Module to Companion Core
+
 **v1.6.0**
 - Added `Clear Sheet` and `Delete Rows or Columns` actions
 - Fixed an crash relating to hitting the Google Rate Limit

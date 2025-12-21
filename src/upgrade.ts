@@ -3,7 +3,7 @@ import type { Config } from './config'
 
 export const getUpgrades = (): CompanionStaticUpgradeScript<Config>[] => {
   const upgradeV1_7_0: CompanionStaticUpgradeScript<Config> = (_context, props): CompanionStaticUpgradeResult<Config> => {
-		const currentConfig = props.config
+    const currentConfig = props.config
     const changes: CompanionStaticUpgradeResult<Config> = {
       updatedConfig: null,
       updatedActions: [],
@@ -11,9 +11,9 @@ export const getUpgrades = (): CompanionStaticUpgradeScript<Config>[] => {
     }
 
     if (!currentConfig) return changes
-		
-		changes.updatedConfig = { ...currentConfig }
-		changes.updatedConfig.referenceIndexVariables = changes.updatedConfig.referenceIndex
+
+    changes.updatedConfig = { ...currentConfig }
+    changes.updatedConfig.referenceIndexVariables = changes.updatedConfig.referenceIndex
 
     return changes
   }
