@@ -1,27 +1,29 @@
-import type {
-  CompanionActionDefinitions,
-  CompanionFeedbackDefinitions,
-  CompanionPresetDefinitions,
-  CompanionHTTPRequest,
-  CompanionHTTPResponse,
-  SomeCompanionConfigField,
+import {
+  InstanceBase,
+  createModuleLogger,
+  type CompanionActionDefinitions,
+  type CompanionFeedbackDefinitions,
+  type CompanionHTTPRequest,
+  type CompanionHTTPResponse,
+  type SomeCompanionConfigField,
 } from '@companion-module/base'
-import { InstanceBase, runEntrypoint } from '@companion-module/base'
+import type { InstanceTypes } from './utils.js'
+import { getActions } from './actions.js'
+import { API } from './api.js'
+import type { Config } from './config.js'
+import { getConfigFields } from './config.js'
+import { getFeedbacks } from './feedback.js'
+import { httpHandler } from './http.js'
+import { getPresetDefinitions, getPresetStructure } from './presets.js'
+import { getUpgrades } from './upgrade.js'
+import { Variables } from './variables.js'
 
-import { getActions } from './actions'
-import { API } from './api'
-import type { Config } from './config'
-import { getConfigFields } from './config'
-import { getFeedbacks } from './feedback'
-import { httpHandler } from './http'
-import { getPresets } from './presets'
-import { getUpgrades } from './upgrade'
-import { Variables } from './variables'
+const log = createModuleLogger('Main')
 
 /**
  * Companion instance class for Google Sheets API
  */
-class GoogleSheetsInstance extends InstanceBase<Config> {
+export default class GoogleSheetsInstance extends InstanceBase<InstanceTypes> {
   public readonly api
   public destroying = false
   public readonly variables
@@ -35,14 +37,15 @@ class GoogleSheetsInstance extends InstanceBase<Config> {
     referenceIndexVariables: false,
     pollInterval: 1.5,
     clearTokens: false,
+    accessToken: null,
+    refreshToken: null,
   }
   public data = {
     sheetData: new Map<string, any>(),
     sheetValues: new Map<string, any>(),
   }
-  private actionCache: CompanionActionDefinitions = {}
-  private feedbackCache: CompanionFeedbackDefinitions = {}
-  private presetCache: CompanionPresetDefinitions = {}
+  private actionCache: CompanionActionDefinitions<any> = {}
+  private feedbackCache: CompanionFeedbackDefinitions<any> = {}
 
   constructor(internal: unknown) {
     super(internal)
@@ -55,6 +58,7 @@ class GoogleSheetsInstance extends InstanceBase<Config> {
    * @description triggered on instance being enabled
    */
   public async init(config: Config): Promise<void> {
+    console.log(123)
     this.config = config
     this.updateInstance()
 
@@ -68,12 +72,12 @@ class GoogleSheetsInstance extends InstanceBase<Config> {
   public async configUpdated(config: Config): Promise<void> {
     this.config = config
     if (this.config.clearTokens) {
-      this.config.accessToken = undefined
-      this.config.refreshToken = undefined
+      this.config.accessToken = null
+      this.config.refreshToken = null
       this.config.code = ''
       this.config.clearTokens = false
 
-      this.log('info', 'Clearing Access and Refresh Tokens')
+      log.info('Clearing Access and Refresh Tokens')
       this.saveConfig(this.config)
     }
 
@@ -89,7 +93,7 @@ class GoogleSheetsInstance extends InstanceBase<Config> {
    * @description close connections and stop timers/intervals
    */
   public async destroy(): Promise<void> {
-    this.log('debug', `Instance destroyed: ${this.id}`)
+    log.debug(`Instance destroyed: ${this.id}`)
     this.destroying = true
     if (this.api.pollAPIInterval) clearTimeout(this.api.pollAPIInterval)
     if (this.api.refreshTokenInterval) clearInterval(this.api.refreshTokenInterval)
@@ -107,9 +111,8 @@ class GoogleSheetsInstance extends InstanceBase<Config> {
    * @description sets channels, token, actions, and feedbacks available for this instance
    */
   public async updateInstance(): Promise<void> {
-    const actions = getActions(this) as CompanionActionDefinitions
-    const feedbacks = getFeedbacks(this) as CompanionFeedbackDefinitions
-    const presets = getPresets(this)
+    const actions = getActions(this)
+    const feedbacks = getFeedbacks(this)
 
     if (JSON.stringify(actions) !== JSON.stringify(this.actionCache)) {
       this.actionCache = actions
@@ -120,10 +123,7 @@ class GoogleSheetsInstance extends InstanceBase<Config> {
       this.setFeedbackDefinitions(feedbacks)
     }
 
-    if (JSON.stringify(presets) !== JSON.stringify(this.presetCache)) {
-      this.presetCache = presets
-      this.setPresetDefinitions(presets)
-    }
+    this.setPresetDefinitions(getPresetStructure, getPresetDefinitions(this))
 
     this.variables.updateVariables()
   }
@@ -137,6 +137,4 @@ class GoogleSheetsInstance extends InstanceBase<Config> {
   }
 }
 
-export = GoogleSheetsInstance
-
-runEntrypoint(GoogleSheetsInstance, getUpgrades())
+export const UpgradeScripts = getUpgrades()

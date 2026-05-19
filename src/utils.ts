@@ -1,3 +1,60 @@
+import type { CompanionInputFieldDropdown, CompanionInputFieldTextInput } from '@companion-module/base'
+import type GoogleSheetsInstance from './index.js'
+import type { Config } from './config.js'
+import type { ActionsSchema } from './actions.js'
+import type { FeedbacksSchema } from './feedback.js'
+import type { VariablesSchema } from './variables.js'
+
+export interface InstanceTypes {
+  config: Config
+  secrets: undefined
+  actions: ActionsSchema
+  feedbacks: FeedbacksSchema
+  variables: VariablesSchema
+}
+
+export type Options = {
+  selectCell: CompanionInputFieldTextInput<'cell'>
+  selectSpreadsheet: (instance: GoogleSheetsInstance) => CompanionInputFieldDropdown<'spreadsheet'>
+}
+
+export const options: Options = {
+  selectCell: {
+    type: 'textinput',
+    label: 'Cell',
+    description: 'Sheet!A1 Notation',
+    id: 'cell',
+    default: '',
+    useVariables: true,
+  },
+  selectSpreadsheet: (instance: GoogleSheetsInstance) => ({
+    type: 'dropdown',
+    label: 'Spreadsheet',
+    description: 'Spreadsheet to adjust',
+    id: 'spreadsheet',
+    default: '',
+    choices: [
+      { label: 'Select Spreadsheet', id: '' },
+      ...instance.config.sheetIDs
+        .split(' ')
+        .filter((id) => {
+          const spreadsheet = instance.data.sheetData.get(id)
+          return spreadsheet?.properties?.title !== undefined
+        })
+        .map((id, index) => {
+          const spreadsheet = instance.data.sheetData.get(id)
+          if (!spreadsheet) return { label: '', id: '' }
+          return {
+            label: spreadsheet.properties.title,
+            id: instance.config.referenceIndex ? index.toString() : id,
+          }
+        })
+        .filter((x) => x.id !== ''),
+    ],
+    expressionDescription: `Valid Values: ${instance.config.referenceIndex ? 'Spreadsheet Index' : 'Spreadsheet IDs'}`,
+  }),
+}
+
 /**
  * @param index col index
  * @returns col letter

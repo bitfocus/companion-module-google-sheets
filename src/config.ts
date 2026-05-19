@@ -1,5 +1,5 @@
-import type { SomeCompanionConfigField } from '@companion-module/base'
-import type GoogleSheetsInstance from './index'
+import type { SomeCompanionConfigField, JsonValue } from '@companion-module/base'
+import type GoogleSheetsInstance from './index.js'
 
 export interface Config {
   //
@@ -13,8 +13,10 @@ export interface Config {
   pollInterval: number
   clearTokens: boolean
 
-  accessToken?: string
-  refreshToken?: string
+  accessToken: string | null
+  refreshToken: string | null
+
+  [x: string]: JsonValue
 }
 
 export const getConfigFields = (instance: GoogleSheetsInstance): SomeCompanionConfigField[] => {

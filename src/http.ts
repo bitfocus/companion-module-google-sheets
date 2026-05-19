@@ -1,7 +1,7 @@
-import type { CompanionHTTPRequest, CompanionHTTPResponse } from '@companion-module/base'
-import type GoogleSheetsInstance from './index'
-import { columnIndexToLetter } from './utils'
+import { type CompanionHTTPRequest, type CompanionHTTPResponse, createModuleLogger } from '@companion-module/base'
 import { Parser } from '@json2csv/plainjs'
+import type GoogleSheetsInstance from './index.js'
+import { columnIndexToLetter } from './utils.js'
 
 interface Endpoints {
   GET: {
@@ -19,6 +19,8 @@ interface Spreadsheets {
   json: string[]
   csv: string[]
 }
+
+const log = createModuleLogger('HTTP')
 
 /**
  * @returns HTTP Request
@@ -96,8 +98,8 @@ export const httpHandler = async (instance: GoogleSheetsInstance, request: Compa
             const csv = parser.parse(sheet.values)
             response.body = csv
           } catch (err) {
-            instance.log('error', 'Error parsing spreadsheet JSON to CSV')
-            instance.log('debug', `${err}`)
+            log.error('Error parsing spreadsheet JSON to CSV')
+            log.debug(`Get Spreadsheets Error: ${err}`)
             response.body = JSON.stringify({ status: 500, message: 'Error parsing spreadsheet JSON to CSV' })
           }
         } else {

@@ -1,75 +1,54 @@
-import type GoogleSheetsInstance from './'
-import { columnIndexToLetter } from './utils'
+import type { CompanionVariableDefinitions } from '@companion-module/base'
+import type GoogleSheetsInstance from './index.js'
+import { columnIndexToLetter } from './utils.js'
 
-type InstanceVariables = Map<string, string | number | undefined>
-type instanceDefinitions = Map<string, string>
+export type VariablesSchema = {
+  read_requests: number
+  write_requests: number
+  exceeded_requests: number
+  backoff_timer: number
+  [key: `${string | number}_id`]: string
+  [key: `${string | number}_title`]: string
+  [key: `${string | number}_index`]: number
+  [key: `${string | number}_sheet_${number}`]: number
+  [key: `${string | number}_${string}!${string}${number}`]: string
+}
 
 export class Variables {
   private readonly instance: GoogleSheetsInstance
-  private currentVariables: InstanceVariables = new Map()
-  private currentDefinitions: instanceDefinitions = new Map()
-  private sheetRange = new Map()
+  public currentDefinitions: Partial<CompanionVariableDefinitions<VariablesSchema>> = {}
+  public currentValues: Partial<VariablesSchema> = {}
 
   constructor(instance: GoogleSheetsInstance) {
     this.instance = instance
   }
 
-  /**
-   * @description Sets variable definitions
-   */
-  public readonly updateVariables = (): void => {
-    const newDefinitions: instanceDefinitions = new Map()
-    const newVariables: InstanceVariables = new Map()
-    const newSheets: string[] = []
-
-    newDefinitions.set('read_requests', 'Read Requests per Min')
-    newVariables.set(
-      'read_requests',
-      this.instance.api.rateLimit.read.reduce((previous, current) => previous + current, 0),
-    )
-
-    newDefinitions.set('write_requests', 'Write Requests per Min')
-    newVariables.set(
-      'write_requests',
-      this.instance.api.rateLimit.write.reduce((previous, current) => previous + current, 0),
-    )
-
-    newDefinitions.set('exceeded_requests', 'Requests Exceeded per Min')
-    newVariables.set(
-      'exceeded_requests',
-      this.instance.api.rateLimit.exceeded.reduce((previous, current) => previous + current, 0),
-    )
-
-    newDefinitions.set('backoff_timer', 'Request Backoff Timer')
-    newVariables.set('backoff_timer', this.instance.api.rateLimit.backoff)
+  private readonly getDefinitions = (): CompanionVariableDefinitions<VariablesSchema> => {
+    const definitions: CompanionVariableDefinitions<VariablesSchema> = {
+      read_requests: { name: 'Read Requests per Min' },
+      write_requests: { name: 'Write Requests per Min' },
+      exceeded_requests: { name: 'Requests Exceeded per Min' },
+      backoff_timer: { name: 'Request Backoff Timer' },
+    }
 
     this.instance.data.sheetValues.forEach((spreadsheet, id) => {
-      const title = this.instance.config.referenceIndexVariables ? this.instance.config.sheetIDs.split(' ').indexOf(id) : spreadsheet.properties.title
-      newDefinitions.set(`${title}_id`, `Spreadsheet ${title} ID`)
-      newVariables.set(`${title}_id`, spreadsheet.spreadsheetId)
+      const title: string | number = this.instance.config.referenceIndexVariables ? this.instance.config.sheetIDs.split(' ').indexOf(id) : spreadsheet.properties.title
+      definitions[`${title}_id`] = { name: `Spreadsheet ${title} ID` }
 
       if (this.instance.config.referenceIndexVariables) {
-        newDefinitions.set(`${title}_title`, `Spreadsheet ${title} Title`)
-        newVariables.set(`${title}_title`, spreadsheet.properties.title)
+        definitions[`${title}_title`] = { name: `Spreadsheet ${title} Title` }
       } else {
-        newDefinitions.set(`${title}_index`, `Spreadsheet ${title} Index`)
-        newVariables.set(`${title}_index`, this.instance.config.sheetIDs.split(' ').indexOf(id))
+        definitions[`${title}_index`] = { name: `Spreadsheet ${title} Index` }
       }
 
       spreadsheet.sheets?.forEach((sheet: any) => {
-        newDefinitions.set(`${title}_sheet_${sheet.properties.index}`, `${title} Sheet ${sheet.properties.index} Title`)
-        newVariables.set(`${title}_sheet_${sheet.properties.index}`, sheet.properties.title)
+        definitions[`${title}_sheet_${sheet.properties.index}`] = { name: `${title} Sheet ${sheet.properties.index} Title` }
       })
 
       spreadsheet.valueRanges?.forEach((valueRange: any) => {
         let sheetName = valueRange.range.split('!')[0]
         if (sheetName.startsWith(`'`) && sheetName.endsWith(`'`)) sheetName = sheetName.slice(1, -1)
         sheetName = sheetName.replace(/#/g, '')
-        newSheets.push(`${title}_${sheetName}`)
-
-        const previousRange = this.sheetRange.get(`${title}_${sheetName}`)
-        const previousRowCount = previousRange ? previousRange.rows : 0
-        const previousColCount = previousRange ? previousRange.columns : 0
 
         const rowCount = valueRange?.values?.length || 0
         let columnCount = 0
@@ -78,97 +57,99 @@ export class Variables {
           if (row.length > columnCount) columnCount = row.length
         })
 
-        // Clear removed rows/columns
-        if (rowCount < previousRowCount || columnCount < previousColCount) {
-          if (rowCount < previousRowCount) {
-            for (let row = rowCount; row < previousRowCount; row++) {
-              for (let column = 0; column < previousColCount; column++) {
-                newVariables.set(`${title}_${sheetName}!${columnIndexToLetter(column)}${row + 1}`, undefined)
-              }
-            }
-          }
-
-          if (columnCount < previousColCount) {
-            for (let column = columnCount; column < previousColCount; column++) {
-              for (let row = 0; row < previousRowCount; row++) {
-                newVariables.set(`${title}_${sheetName}!${columnIndexToLetter(column)}${row + 1}`, undefined)
-              }
-            }
-          }
-        }
-
-        this.sheetRange.set(`${title}_${sheetName}`, { rows: rowCount, columns: columnCount })
-
         // For empty sheets without values, set a default empty example
         if (valueRange.values === undefined) {
-          newDefinitions.set(`${title}_${sheetName}!A1`, `Example ${title} ${sheetName}!A1`)
-          newVariables.set(`${title}_${sheetName}!A1`, '')
+          definitions[`${title}_${sheetName}!A1`] = { name: `Example ${title} ${sheetName}!A1` }
         }
 
         for (let row = 0; row < rowCount; row++) {
           for (let column = 0; column < columnCount; column++) {
-            const data = valueRange.values[row]?.[column] || ''
             if (row === 0 && column === 0) {
-              newDefinitions.set(`${title}_${sheetName}!${columnIndexToLetter(column)}${row + 1}`, `Example ${title} ${sheetName}!${columnIndexToLetter(column)}${row + 1}`)
+              definitions[`${title}_${sheetName}!${columnIndexToLetter(column) as string}${row + 1}`] = {
+                name: `Example ${title} ${sheetName}!${columnIndexToLetter(column)}${row + 1}`,
+              }
             }
-            newVariables.set(`${title}_${sheetName}!${columnIndexToLetter(column)}${row + 1}`, data)
           }
         }
       })
     })
 
-    // Clear removed sheets
-    const fullSheetNames = [...this.sheetRange.keys()]
-    fullSheetNames.forEach((fullSheetName) => {
-      if (!newSheets.includes(fullSheetName)) {
-        const sheetRange = this.sheetRange.get(fullSheetName)
-        this.instance.log('debug', `Clearing variables for missing sheet ${fullSheetName}`)
+    return definitions
+  }
 
-        for (let row = 0; row < sheetRange.rows; row++) {
-          for (let column = 0; column < sheetRange.columns; column++) {
-            newVariables.set(`${fullSheetName}!${columnIndexToLetter(column)}${row + 1}`, undefined)
-          }
+  private readonly getValues = (): VariablesSchema => {
+    const variables: VariablesSchema = {
+      read_requests: this.instance.api.rateLimit.read.reduce((previous, current) => previous + current, 0),
+      write_requests: this.instance.api.rateLimit.write.reduce((previous, current) => previous + current, 0),
+      exceeded_requests: this.instance.api.rateLimit.exceeded.reduce((previous, current) => previous + current, 0),
+      backoff_timer: this.instance.api.rateLimit.backoff,
+    }
+
+    this.instance.data.sheetValues.forEach((spreadsheet, id) => {
+      const title: string = this.instance.config.referenceIndexVariables ? this.instance.config.sheetIDs.split(' ').indexOf(id) : spreadsheet.properties.title
+      variables[`${title}_id`] = spreadsheet.spreadsheetId
+
+      if (this.instance.config.referenceIndexVariables) {
+        variables[`${title}_title`] = spreadsheet.properties.title
+      } else {
+        variables[`${title}_index`] = this.instance.config.sheetIDs.split(' ').indexOf(id)
+      }
+
+      spreadsheet.sheets?.forEach((sheet: any) => {
+        variables[`${title}_sheet_${sheet.properties.index}`] = sheet.properties.title
+      })
+
+      spreadsheet.valueRanges?.forEach((valueRange: any) => {
+        let sheetName = valueRange.range.split('!')[0]
+        if (sheetName.startsWith(`'`) && sheetName.endsWith(`'`)) sheetName = sheetName.slice(1, -1)
+        sheetName = sheetName.replace(/#/g, '')
+
+        const rowCount = valueRange?.values?.length || 0
+        let columnCount = 0
+
+        valueRange?.values?.forEach((row: any) => {
+          if (row.length > columnCount) columnCount = row.length
+        })
+
+        // For empty sheets without values, set a default empty example
+        if (valueRange.values === undefined) {
+          variables[`${title}_${sheetName}!A1`] = ''
         }
 
-        this.sheetRange.delete(fullSheetName)
-      }
+        for (let row = 0; row < rowCount; row++) {
+          for (let column = 0; column < columnCount; column++) {
+            const data = valueRange.values[row]?.[column] || ''
+            variables[`${title}_${sheetName}!${columnIndexToLetter(column) as string}${row + 1}`] = data
+          }
+        }
+      })
     })
 
-    let definitionChange = false
+    return variables
+  }
 
-    newDefinitions.forEach((name, variableId) => {
-      if (this.currentDefinitions.get(variableId) !== name) definitionChange = true
-    })
+  public updateVariables = (): void => {
+    const newDefinitions = this.getDefinitions()
+    const newValues = this.getValues()
 
-    this.currentDefinitions.forEach((name, variableId) => {
-      if (newDefinitions.get(variableId) !== name) definitionChange = true
-    })
-
-    if (definitionChange) {
-      this.instance.log('debug', 'Setting new variable definitions')
-      this.instance.setVariableDefinitions(
-        [...newDefinitions.entries()].map((entry) => ({
-          variableId: entry[0].replace(/ /g, '_').replace(/!/g, '_').replace(/'/g, '').replace(/\(/g, '').replace(/\)/g, ''),
-          name: entry[1],
-        })),
-      )
+    if (JSON.stringify(this.currentDefinitions) !== JSON.stringify(newDefinitions)) {
+      this.instance.setVariableDefinitions(newDefinitions)
       this.currentDefinitions = newDefinitions
     }
 
-    const changedVariables: { [variableId: string]: string | number | undefined } = {}
-    newVariables.forEach((value, variableId) => {
-      if (this.currentVariables.get(variableId) !== value)
-        changedVariables[variableId.replace(/ /g, '_').replace(/!/g, '_').replace(/'/g, '').replace(/\(/g, '').replace(/\)/g, '')] = value === undefined ? undefined : value + ''
+    const valueChanges: Partial<VariablesSchema> = {}
+
+    Object.entries(newValues).forEach(([key, value]: [any, any]) => {
+      if (this.currentValues[key] !== value) valueChanges[key] = value
     })
 
-    if (Object.keys(changedVariables).length > 0) {
-      this.instance.setVariableValues(changedVariables)
-      this.currentVariables = newVariables
+    Object.keys(this.currentValues).forEach((key: any) => {
+      if (newValues[key] === undefined) valueChanges[key] = undefined
+    })
 
-      // Log large variable changes
-      if (Object.keys(changedVariables).length > 1000) {
-        this.instance.log('debug', `Updating ${Object.keys(changedVariables).length} of ${newVariables.size} variables`)
-      }
+    if (Object.keys(newValues).length > 0) {
+      this.instance.setVariableValues(newValues)
+      this.currentValues = newValues
     }
   }
 }
