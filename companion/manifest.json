@@ -1,4 +1,5 @@
 {
+  "$schema": "../node_modules/@companion-module/base/assets/manifest.schema.json",
 	"id": "google-sheets",
 	"name": "google-sheets",
 	"shortname": "Google Sheets",
