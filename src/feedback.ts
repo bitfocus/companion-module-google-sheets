@@ -1,24 +1,9 @@
-import type GoogleSheetsInstance from './index'
-import type {
-  CompanionAdvancedFeedbackResult,
-  CompanionFeedbackButtonStyleResult,
-  CompanionFeedbackAdvancedEvent,
-  CompanionFeedbackBooleanEvent,
-  SomeCompanionFeedbackInputField,
-  CompanionFeedbackContext,
-} from '@companion-module/base'
-import { combineRgb } from '@companion-module/base'
+import type { CompanionFeedbackSchema, CompanionFeedbackDefinitions } from '@companion-module/base'
+import type GoogleSheetsInstance from './index.js'
+import { options } from './utils.js'
 
-export interface GoogleSheetsFeedbacks {
-  cellValue: GoogleSheetsFeedback<CellValueCallback>
-
-  // Index signature
-  [key: string]: GoogleSheetsFeedback<any>
-}
-
-interface CellValueCallback {
-  feedbackId: 'cellValue'
-  options: Readonly<{
+export type FeedbacksSchema = {
+  cellValue: CompanionFeedbackSchema<{
     spreadsheet: string
     cell: string
     comparison: 'eq' | 'ne' | 'lt' | 'lte' | 'gt' | 'gte'
@@ -26,72 +11,15 @@ interface CellValueCallback {
   }>
 }
 
-// Callback type for Presets
-export type FeedbackCallbacks = CellValueCallback
-
-// Force options to have a default to prevent sending undefined values
-type InputFieldWithDefault = Exclude<SomeCompanionFeedbackInputField, 'default'> & {
-  default: string | number | boolean | null
-}
-
-// GoogleSheets Boolean and Advanced feedback types
-interface GoogleSheetsFeedbackBoolean<T> {
-  type: 'boolean'
-  name: string
-  description: string
-  style: Partial<CompanionFeedbackButtonStyleResult>
-  options: InputFieldWithDefault[]
-  callback: (feedback: Readonly<Omit<CompanionFeedbackBooleanEvent, 'options' | 'type'> & T>, context: CompanionFeedbackContext) => boolean | Promise<boolean>
-  subscribe?: (feedback: Readonly<Omit<CompanionFeedbackBooleanEvent, 'options' | 'type'> & T>) => boolean
-  unsubscribe?: (feedback: Readonly<Omit<CompanionFeedbackBooleanEvent, 'options' | 'type'> & T>) => boolean
-}
-
-interface GoogleSheetsFeedbackAdvanced<T> {
-  type: 'advanced'
-  name: string
-  description: string
-  options: InputFieldWithDefault[]
-  callback: (feedback: Readonly<Omit<CompanionFeedbackAdvancedEvent, 'options' | 'type'> & T>, context: CompanionFeedbackContext) => CompanionAdvancedFeedbackResult
-  subscribe?: (feedback: Readonly<Omit<CompanionFeedbackAdvancedEvent, 'options' | 'type'> & T>) => CompanionAdvancedFeedbackResult
-  unsubscribe?: (feedback: Readonly<Omit<CompanionFeedbackAdvancedEvent, 'options' | 'type'> & T>) => CompanionAdvancedFeedbackResult
-}
-
-export type GoogleSheetsFeedback<T> = GoogleSheetsFeedbackBoolean<T> | GoogleSheetsFeedbackAdvanced<T>
-
-export function getFeedbacks(instance: GoogleSheetsInstance): GoogleSheetsFeedbacks {
+export function getFeedbacks(instance: GoogleSheetsInstance): CompanionFeedbackDefinitions<FeedbacksSchema> {
   return {
     cellValue: {
       type: 'boolean',
       name: 'Cell Value',
       description: '',
       options: [
-        {
-          type: 'dropdown',
-          label: 'Spreadsheet',
-          id: 'spreadsheet',
-          default: '',
-          choices: [
-            { label: 'Select Spreadsheet', id: '' },
-            ...instance.config.sheetIDs
-              .split(' ')
-              .map((id, index) => {
-                const spreadsheet = instance.data.sheetData.get(id)
-                if (!spreadsheet) return { label: '', id: '' }
-                return {
-                  label: spreadsheet.properties.title,
-                  id: instance.config.referenceIndex ? index.toString() : id,
-                }
-              })
-              .filter((x) => x.id !== ''),
-          ],
-        },
-        {
-          type: 'textinput',
-          label: 'Cell (Sheet!A1)',
-          id: 'cell',
-          default: '',
-          useVariables: true,
-        },
+        options.selectSpreadsheet(instance),
+        options.selectCell,
         {
           type: 'dropdown',
           label: 'Comparison',
@@ -114,12 +42,12 @@ export function getFeedbacks(instance: GoogleSheetsInstance): GoogleSheetsFeedba
           useVariables: true,
         },
       ],
-      style: {
-        bgcolor: combineRgb(255, 0, 0),
+      defaultStyle: {
+        bgcolor: 0xff0000,
       },
-      callback: async (feedback, context) => {
-        const cell = await context.parseVariablesInString(feedback.options.cell)
-        const value = await context.parseVariablesInString(feedback.options.value)
+      callback: async (feedback) => {
+        const cell = feedback.options.cell
+        const value = feedback.options.value
 
         let spreadsheetID = feedback.options.spreadsheet
 

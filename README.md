@@ -11,6 +11,9 @@ This module now supports Companions HTTP API, providing endpoints that can be us
 
 
 # Recent Patches
+**v2.0.0**
+- Updated for Companion API v2, allowing support for Expressions directly in most action/feedback options
+
 **v1.7.0**
 - Added separate config options for Action/Feedback options and Variables for referencing by index instead of ID
 - Fixed an issue with parsing spreadsheet IDs
@@ -24,20 +27,6 @@ This module now supports Companions HTTP API, providing endpoints that can be us
 **v1.5.0**
 - Updated to Node 22, replaced Got dependency with Fetch
 
-**v1.4.1**
-- Fixed an issue with certain symbols in sheet names breaking API requests
-
-**v1.4.0**
-- Added `Add Sheet` and `Duplicate Sheet` actions
-- Bumped dependency versions
-
-**v1.3.1**
-- Fixed bug related to Spreadsheet ID
-
-**v1.3.0**
-- Removed the dependency `Open`
-- Replaced opening a browser tab for auth with linking back to a HTTP handler to redirect the user to the OAuth URL
-- Minor typo fixes
 
 
 # License

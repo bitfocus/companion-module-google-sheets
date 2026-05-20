@@ -1,6 +1,6 @@
-import type GoogleSheetsInstance from './'
-import { cellToIndex } from './utils'
-import { InstanceStatus } from '@companion-module/base'
+import { InstanceStatus, createModuleLogger } from '@companion-module/base'
+import type GoogleSheetsInstance from './index.js'
+import { cellToIndex } from './utils.js'
 
 interface RateLimit {
   backoff: number
@@ -12,6 +12,8 @@ interface RateLimit {
 }
 
 type RateLimitType = 'read' | 'write' | 'exceeded'
+
+const log = createModuleLogger('API')
 
 export class API {
   constructor(instance: GoogleSheetsInstance) {
@@ -67,22 +69,22 @@ export class API {
       responseIncludeGridData: false,
     }
 
-    this.instance.log('debug', `Attempting to Add Sheet: ${JSON.stringify(body)}`)
+    log.debug(`Attempting to Add Sheet: ${JSON.stringify(body)}`)
 
     fetch(url, { method: 'POST', body: JSON.stringify(body) })
       .then(async (res) => res.json())
       .then((res: any) => {
         if (res.error) {
           if (res.error.code === 429) {
-            this.instance.log('warn', 'Rate Limit exceeded')
+            log.warn('Rate Limit exceeded')
             this.rateLimit.incrementRequest('exceeded')
           } else {
-            this.instance.log('warn', `API Error ${res.error.code}: ${res.error.message}`)
+            log.warn(`API Error ${res.error.code}: ${res.error.message}`)
           }
-          this.instance.log('debug', res.error.message)
+          log.debug(res.error.message)
         } else {
-          this.instance.log('info', `Sheet ${sheetName} added`)
-          this.instance.log('debug', `Add Sheet Response: ${JSON.stringify(res)}`)
+          log.info(`Sheet ${sheetName} added`)
+          log.debug(`Add Sheet Response: ${JSON.stringify(res)}`)
         }
       })
       .catch((err) => {
@@ -90,11 +92,11 @@ export class API {
 
         try {
           body = JSON.parse(body)
-          this.instance.log('warn', body.error.message)
-          this.instance.log('debug', JSON.stringify(body))
+          log.warn(body.error.message)
+          log.debug(JSON.stringify(body))
         } catch (e) {
-          this.instance.log('warn', `API Error - Unable to parse response`)
-          this.instance.log('debug', `${e}`)
+          log.warn(`API Error - Unable to parse response`)
+          log.debug(`${e}`)
         }
       })
   }
@@ -111,26 +113,26 @@ export class API {
       values: [[value]],
     }
 
-    this.instance.log('debug', `Adjusting Sheet: ${spreadsheet} Cell: ${cell} Value: ${value}`)
+    log.debug(`Adjusting Sheet: ${spreadsheet} Cell: ${cell} Value: ${value}`)
 
     fetch(url, { method: 'PUT', body: JSON.stringify(body) })
       .then(async (res) => res.json())
       .then((res: any) => {
         if (res.error) {
           if (res.error.code === 429) {
-            this.instance.log('warn', 'Rate Limit exceeded')
+            log.warn('Rate Limit exceeded')
             this.rateLimit.incrementRequest('exceeded')
           } else {
-            this.instance.log('warn', `API Error ${res.error.code}: ${res.error.message}`)
+            log.warn(`API Error ${res.error.code}: ${res.error.message}`)
           }
-          this.instance.log('debug', res.error.message)
+          log.debug(res.error.message)
         } else {
-          this.instance.log('info', `${cell} successfully changed to ${value}`)
-          this.instance.log('debug', `Adjust Cell Response: ${JSON.stringify(res)}`)
+          log.info(`${cell} successfully changed to ${value}`)
+          log.debug(`Adjust Cell Response: ${JSON.stringify(res)}`)
         }
       })
       .catch((err) => {
-        this.instance.log('warn', `Error changing cell: ${JSON.stringify(err)}`)
+        log.warn(`Error changing cell: ${JSON.stringify(err)}`)
       })
   }
 
@@ -156,23 +158,23 @@ export class API {
       body: JSON.stringify(body),
     }
 
-    this.instance.log('debug', `Attempting to Clear Sheet: ${spreadsheet} Sheet: ${sheet}`)
+    log.debug(`Attempting to Clear Sheet: ${spreadsheet} Sheet: ${sheet}`)
 
     return fetch(url, options)
       .then(async (res) => res.json())
       .then((res: any) => {
         if (res.error) {
           if (res.error.code === 429) {
-            this.instance.log('warn', 'Rate Limit exceeded')
+            log.warn('Rate Limit exceeded')
             this.rateLimit.incrementRequest('exceeded')
           } else {
-            this.instance.log('warn', `API Error ${res.error.code}: ${res.error.message}`)
+            log.warn(`API Error ${res.error.code}: ${res.error.message}`)
           }
-          this.instance.log('debug', res.error.message)
+          log.debug(res.error.message)
         }
       })
       .catch((err) => {
-        this.instance.log('debug', `clearSheet err: ${err.message} - url: ${url}`)
+        log.debug(`clearSheet err: ${err.message} - url: ${url}`)
         if (err.message.includes('429')) this.rateLimit.incrementRequest('exceeded')
       })
   }
@@ -206,16 +208,16 @@ export class API {
       .then((res: any) => {
         if (res.error) {
           if (res.error.code === 429) {
-            this.instance.log('warn', 'Rate Limit exceeded')
+            log.warn('Rate Limit exceeded')
             this.rateLimit.incrementRequest('exceeded')
           } else {
-            this.instance.log('warn', `API Error ${res.error.code}: ${res.error.message}`)
+            log.warn(`API Error ${res.error.code}: ${res.error.message}`)
           }
-          this.instance.log('debug', res.error.message)
+          log.debug(res.error.message)
         }
       })
       .catch((err) => {
-        this.instance.log('debug', `deleteRowColumn err: ${err.message} - url: ${url}`)
+        log.debug(`deleteRowColumn err: ${err.message} - url: ${url}`)
         if (err.message.includes('429')) this.rateLimit.incrementRequest('exceeded')
       })
   }
@@ -244,19 +246,19 @@ export class API {
     fetch(url, { method: 'POST', body: JSON.stringify(body) })
       .then(async (res) => res.json())
       .then((res) => {
-        this.instance.log('info', `Sheet ${newSheet} added`)
-        this.instance.log('debug', `Duplicating Sheet Response: ${JSON.stringify(res)}`)
+        log.info(`Sheet ${newSheet} added`)
+        log.debug(`Duplicating Sheet Response: ${JSON.stringify(res)}`)
       })
       .catch((err) => {
         let body = err?.response?.body
 
         try {
           body = JSON.parse(body)
-          this.instance.log('debug', JSON.stringify(body))
-          this.instance.log('warn', body.error.message)
+          log.debug(JSON.stringify(body))
+          log.warn(body.error.message)
         } catch (e) {
-          this.instance.log('warn', 'API Error - Unable to parse response')
-          this.instance.log('debug', `${e}`)
+          log.warn('API Error - Unable to parse response')
+          log.debug(`${e}`)
         }
       })
   }
@@ -286,12 +288,12 @@ export class API {
       ['grant_type', 'authorization_code'],
     ]).toString()
 
-    this.instance.log('debug', `Attempting to exchange Code for Token - ${this.instance.config.code}`)
+    log.debug(`Attempting to exchange Code for Token - ${this.instance.config.code}`)
 
     return fetch(`https://oauth2.googleapis.com/token?${searchParams}`, { method: 'POST' })
       .then(async (res) => res.json())
       .then((res: any) => {
-        this.instance.log('debug', `Exchanged code - ${JSON.stringify(res)}`)
+        log.debug(`Exchanged code - ${JSON.stringify(res)}`)
         this.instance.updateStatus(InstanceStatus.Ok)
 
         this.instance.config.accessToken = res.access_token
@@ -304,7 +306,7 @@ export class API {
       })
       .catch((err) => {
         this.instance.updateStatus(InstanceStatus.UnknownError, `Error exchanging code`)
-        this.instance.log('warn', `Error exchanging code - ${err.message}`)
+        log.warn(`Error exchanging code - ${err.message}`)
         this.instance.saveConfig({ ...this.instance.config, code: '' })
 
         return false
@@ -317,7 +319,7 @@ export class API {
   private refreshToken = async (): Promise<boolean> => {
     if (!this.instance.config.clientID || !this.instance.config.clientSecret || !this.instance.config.refreshToken) return false
 
-    this.instance.log('debug', `Attempting to refresh token - ${this.instance.config.refreshToken}`)
+    log.debug(`Attempting to refresh token - ${this.instance.config.refreshToken}`)
 
     const searchParams = new URLSearchParams([
       ['client_id', this.instance.config.clientID],
@@ -329,7 +331,7 @@ export class API {
     return fetch(`https://oauth2.googleapis.com/token?${searchParams}`, { method: 'POST' })
       .then(async (res) => res.json())
       .then((res: any) => {
-        this.instance.log('debug', `Token Refreshed - ${JSON.stringify(res)}`)
+        log.debug(`Token Refreshed - ${JSON.stringify(res)}`)
         this.instance.updateStatus(InstanceStatus.Ok)
 
         this.instance.config.accessToken = res.access_token
@@ -340,7 +342,7 @@ export class API {
         return true
       })
       .catch((err) => {
-        this.instance.log('error', err.message)
+        log.error(err.message)
         return false
       })
   }
@@ -351,7 +353,7 @@ export class API {
    * @returns value of the cell or null
    */
   public parseCellValue = async (sheetID: string, cell: string): Promise<string | null> => {
-    const cellID = (await this.instance.parseVariablesInString(cell)) || ''
+    const cellID = cell || ''
     const spreadsheet = this.instance.data.sheetValues.get(sheetID)
 
     if (!spreadsheet || cellID === '') return null
@@ -365,7 +367,7 @@ export class API {
     })
 
     if (!sheet) {
-      this.instance.log('debug', `valueRanges - ${JSON.stringify(spreadsheet.valueRanges)} -  ${cellID}`)
+      log.debug(`valueRanges - ${JSON.stringify(spreadsheet.valueRanges)} -  ${cellID}`)
       return null
     }
 
@@ -397,19 +399,19 @@ export class API {
         .then((res: any) => {
           if (res.error) {
             if (res.error.code === 429) {
-              this.instance.log('warn', 'Rate Limit exceeded')
+              log.warn('Rate Limit exceeded')
               this.rateLimit.incrementRequest('exceeded')
             } else {
-              this.instance.log('warn', `API Error ${res.error.code}: ${res.error.message}`)
+              log.warn(`API Error ${res.error.code}: ${res.error.message}`)
             }
-            this.instance.log('debug', res.error.message)
+            log.debug(res.error.message)
           } else {
             this.instance.data.sheetData.set(id, res)
             return
           }
         })
         .catch((err) => {
-          this.instance.log('debug', `getSheet err: ${err.message}`)
+          log.debug(`getSheet err: ${err.message}`)
           if (err.message.includes('429')) this.rateLimit.incrementRequest('exceeded')
           return
         })
@@ -433,12 +435,12 @@ export class API {
         .then((res: any) => {
           if (res.error) {
             if (res.error.code === 429) {
-              this.instance.log('warn', 'Rate Limit exceeded')
+              log.warn('Rate Limit exceeded')
               this.rateLimit.incrementRequest('exceeded')
             } else {
-              this.instance.log('warn', `API Error ${res.error.code}: ${res.error.message}`)
+              log.warn(`API Error ${res.error.code}: ${res.error.message}`)
             }
-            this.instance.log('debug', res.error.message)
+            log.debug(res.error.message)
           } else {
             if (res.valueRanges === undefined) {
               return
@@ -450,7 +452,7 @@ export class API {
           }
         })
         .catch((err) => {
-          this.instance.log('debug', `getSheetValues err: ${err.message} - url: ${url}`)
+          log.debug(`getSheetValues err: ${err.message} - url: ${url}`)
           if (err.message.includes('429')) this.rateLimit.incrementRequest('exceeded')
         })
     }
@@ -471,7 +473,7 @@ export class API {
           return Promise.allSettled(sheetValuesRequest)
         })
         .catch((err) => {
-          this.instance.log('warn', `API Polling err: ${JSON.stringify(err)}`)
+          log.warn(`API Polling err: ${JSON.stringify(err)}`)
         })
         .finally(() => {
           this.instance.updateInstance()
@@ -483,7 +485,7 @@ export class API {
 
       Promise.allSettled(sheetValuesRequest)
         .catch((err) => {
-          this.instance.log('warn', `API Polling err: ${JSON.stringify(err)}`)
+          log.warn(`API Polling err: ${JSON.stringify(err)}`)
         })
         .finally(() => {
           this.instance.updateInstance()
@@ -526,7 +528,7 @@ export class API {
     }
 
     if (!spreadsheetID) {
-      this.instance.log('warn', `Unable to find Spreadsheet ${id}`)
+      log.warn(`Unable to find Spreadsheet ${id}`)
       return null
     }
 

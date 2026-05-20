@@ -1,47 +1,23 @@
-import type { CompanionActionEvent, CompanionActionContext, SomeCompanionActionInputField } from '@companion-module/base'
-import type GoogleSheetsInstance from './index'
-import { colToIndex } from './utils'
+import { type CompanionActionDefinitions, type CompanionActionSchema, createModuleLogger } from '@companion-module/base'
+import type GoogleSheetsInstance from './index.js'
+import { colToIndex, options } from './utils.js'
 
-export interface GoogleSheetsActions {
-  addSheet: GoogleSheetsAction<AddSheetCallback>
-  adjustCell: GoogleSheetsAction<AdjustCellCallback>
-  clearSheet: GoogleSheetsAction<ClearSheetCallback>
-  deleteRowColumn: GoogleSheetsAction<DeleteRowColumnCallback>
-  duplicateSheet: GoogleSheetsAction<DuplicateSheetCallback>
-
-  // Index signature
-  [key: string]: GoogleSheetsAction<any>
-}
-
-interface AddSheetCallback {
-  actionId: 'addSheet'
-  options: Readonly<{
+export type ActionsSchema = {
+  addSheet: CompanionActionSchema<{
     spreadsheet: string
     name: string
   }>
-}
-
-interface AdjustCellCallback {
-  actionId: 'adjustCell'
-  options: Readonly<{
+  adjustCell: CompanionActionSchema<{
     type: 'Set' | 'Increase' | 'Decrease'
     spreadsheet: string
     cell: string
     value: string
   }>
-}
-
-interface ClearSheetCallback {
-  actionId: 'clearSheet'
-  options: Readonly<{
+  clearSheet: CompanionActionSchema<{
     spreadsheet: string
     sheet: string
   }>
-}
-
-interface DeleteRowColumnCallback {
-  actionId: 'deleteRowColumn'
-  options: Readonly<{
+  deleteRowColumn: CompanionActionSchema<{
     spreadsheet: string
     sheet: string
     type: 'ROWS' | 'COLUMNS'
@@ -50,79 +26,35 @@ interface DeleteRowColumnCallback {
     columnStart: string
     columnStop: string
   }>
-}
-
-interface DuplicateSheetCallback {
-  actionId: 'duplicateSheet'
-  options: Readonly<{
+  duplicateSheet: CompanionActionSchema<{
     spreadsheet: string
     duplicateName: string
     newName: string
   }>
 }
 
-export type ActionCallbacks = AddSheetCallback | AdjustCellCallback | DeleteRowColumnCallback | DuplicateSheetCallback
+const log = createModuleLogger('Actions')
 
-// Force options to have a default to prevent sending undefined values
-type InputFieldWithDefault = Exclude<SomeCompanionActionInputField, 'default'> & {
-  default: string | number | boolean | null
-}
-
-// Actions specific to GoogleSheets
-export interface GoogleSheetsAction<T> {
-  name: string
-  description?: string
-  options: InputFieldWithDefault[]
-  callback: (action: Readonly<Omit<CompanionActionEvent, 'options' | 'id'> & T>, context: CompanionActionContext) => void | Promise<void>
-  subscribe?: (action: Readonly<Omit<CompanionActionEvent, 'options' | 'id'> & T>) => void
-  unsubscribe?: (action: Readonly<Omit<CompanionActionEvent, 'options' | 'id'> & T>) => void
-}
-
-export function getActions(instance: GoogleSheetsInstance): GoogleSheetsActions {
+export function getActions(instance: GoogleSheetsInstance): CompanionActionDefinitions<ActionsSchema> {
   return {
     addSheet: {
       name: 'Add Sheet',
       options: [
-        {
-          type: 'dropdown',
-          label: 'Spreadsheet',
-          tooltip: 'Spreadsheet to adjust',
-          id: 'spreadsheet',
-          default: '',
-          choices: [
-            { label: 'Select Spreadsheet', id: '' },
-            ...instance.config.sheetIDs
-              .split(' ')
-              .filter((id) => {
-                const spreadsheet = instance.data.sheetData.get(id)
-                return spreadsheet?.properties?.title !== undefined
-              })
-              .map((id, index) => {
-                const spreadsheet = instance.data.sheetData.get(id)
-                if (!spreadsheet) return { label: '', id: '' }
-                return {
-                  label: spreadsheet.properties.title,
-                  id: instance.config.referenceIndex ? index.toString() : id,
-                }
-              })
-              .filter((x) => x.id !== ''),
-          ],
-        },
+        options.selectSpreadsheet(instance),
         {
           type: 'textinput',
           label: 'Name',
-          tooltip: 'Name for the new Sheet',
+          description: 'Name for the new Sheet',
           id: 'name',
           default: '',
           useVariables: true,
         },
       ],
-      callback: async (action, context) => {
+      callback: async (action) => {
         const spreadsheetID = instance.api.getSpreadsheetID(action.options.spreadsheet)
-        if (spreadsheetID === null) return
-        const name = await context.parseVariablesInString(action.options.name)
+        if (spreadsheetID === null) return log.warn(`Unable to Add Sheet - Unknown Spreadsheet ${action.options.spreadsheet}`)
 
-        return instance.api.addSheet(spreadsheetID, name)
+        return instance.api.addSheet(spreadsheetID, action.options.name)
       },
     },
 
@@ -132,7 +64,7 @@ export function getActions(instance: GoogleSheetsInstance): GoogleSheetsActions 
         {
           type: 'dropdown',
           label: 'Type',
-          tooltip: 'Type of cell adjustment',
+          description: 'Type of cell adjustment',
           id: 'type',
           default: 'Set',
           choices: [
@@ -140,32 +72,13 @@ export function getActions(instance: GoogleSheetsInstance): GoogleSheetsActions 
             { label: 'Increase', id: 'Increase' },
             { label: 'Decrease', id: 'Decrease' },
           ],
+          expressionDescription: `Valid Values: 'Set', 'Increase', or 'Decrease'`,
         },
-        {
-          type: 'dropdown',
-          label: 'Spreadsheet',
-          tooltip: 'Spreadsheet to adjust',
-          id: 'spreadsheet',
-          default: '',
-          choices: [
-            { label: 'Select Spreadsheet', id: '' },
-            ...instance.config.sheetIDs
-              .split(' ')
-              .map((id, index) => {
-                const spreadsheet = instance.data.sheetData.get(id)
-                if (!spreadsheet) return { label: '', id: '' }
-                return {
-                  label: spreadsheet.properties.title,
-                  id: instance.config.referenceIndex ? index.toString() : id,
-                }
-              })
-              .filter((x) => x.id !== ''),
-          ],
-        },
+        options.selectSpreadsheet(instance),
         {
           type: 'textinput',
           label: 'Cell',
-          tooltip: 'Sheet!A1 Notation',
+          description: 'Sheet!A1 Notation',
           id: 'cell',
           default: '',
           useVariables: true,
@@ -173,30 +86,29 @@ export function getActions(instance: GoogleSheetsInstance): GoogleSheetsActions 
         {
           type: 'textinput',
           label: 'Value',
-          tooltip: 'Value to set/increase/decrease',
+          description: 'Value to set/increase/decrease',
           id: 'value',
           default: '',
           useVariables: true,
         },
       ],
-      callback: async (action, context) => {
+      callback: async (action) => {
         const spreadsheetID = instance.api.getSpreadsheetID(action.options.spreadsheet)
         if (spreadsheetID === null) return
 
-        const cell = await context.parseVariablesInString(action.options.cell)
+        const cell = action.options.cell
         if (!cell || !cell.includes('!') || action.options.spreadsheet === '') return
 
-        let newValue: string | number = await context.parseVariablesInString(action.options.value)
+        let newValue: string | number = action.options.value
 
         if (action.options.type === 'Set') {
-          instance.log('debug', `Setting Sheet: ${spreadsheetID} Cell: ${cell} Value: ${newValue}`)
+          log.debug(`Setting Sheet: ${spreadsheetID} Cell: ${cell} Value: ${newValue}`)
           instance.api.adjustCell(spreadsheetID, cell, newValue)
         } else {
           newValue = parseFloat(newValue)
 
           if (isNaN(newValue)) {
-            instance.log('warn', `Unable to adjust cell: ${newValue} is not a number`)
-            return
+            return log.warn(`Unable to adjust cell: ${newValue} is not a number`)
           }
 
           const cellValue = await instance.api.parseCellValue(spreadsheetID, cell)
@@ -208,7 +120,7 @@ export function getActions(instance: GoogleSheetsInstance): GoogleSheetsActions 
             newValue = parseFloat(cellValue) - newValue
           }
 
-          instance.api.adjustCell(spreadsheetID, cell, newValue.toString())
+          return instance.api.adjustCell(spreadsheetID, cell, newValue.toString())
         }
       },
     },
@@ -216,31 +128,7 @@ export function getActions(instance: GoogleSheetsInstance): GoogleSheetsActions 
     clearSheet: {
       name: 'Clear Sheet',
       options: [
-        {
-          type: 'dropdown',
-          label: 'Spreadsheet',
-          tooltip: 'Spreadsheet to adjust',
-          id: 'spreadsheet',
-          default: '',
-          choices: [
-            { label: 'Select Spreadsheet', id: '' },
-            ...instance.config.sheetIDs
-              .split(' ')
-              .filter((id) => {
-                const spreadsheet = instance.data.sheetData.get(id)
-                return spreadsheet?.properties?.title !== undefined
-              })
-              .map((id, index) => {
-                const spreadsheet = instance.data.sheetData.get(id)
-                if (!spreadsheet) return { label: '', id: '' }
-                return {
-                  label: spreadsheet.properties.title,
-                  id: instance.config.referenceIndex ? index.toString() : id,
-                }
-              })
-              .filter((x) => x.id !== ''),
-          ],
-        },
+        options.selectSpreadsheet(instance),
         {
           type: 'textinput',
           label: 'Sheet to clear',
@@ -249,51 +137,29 @@ export function getActions(instance: GoogleSheetsInstance): GoogleSheetsActions 
           useVariables: true,
         },
       ],
-      callback: async (action, context) => {
+      callback: async (action) => {
         const spreadsheetID = instance.api.getSpreadsheetID(action.options.spreadsheet)
         if (spreadsheetID === null) return
 
-        const sheetName = await context.parseVariablesInString(action.options.sheet)
         let sheetId
 
         const sheetData = instance.data.sheetData.get(spreadsheetID)
         sheetData.sheets.forEach((sheet: any) => {
-          if (sheet?.properties?.title === sheetName) sheetId = sheet?.properties?.sheetId
+          if (sheet?.properties?.title === action.options.sheet) sheetId = sheet?.properties?.sheetId
         })
 
         if (sheetId === undefined) {
-          instance.log('warn', 'Invalid sheet name')
-          return
+          return log.warn('Invalid sheet name')
         }
 
-        instance.api.clearSheet(spreadsheetID, sheetId)
+        return instance.api.clearSheet(spreadsheetID, sheetId)
       },
     },
 
     deleteRowColumn: {
       name: 'Delete Rows or Columns',
       options: [
-        {
-          type: 'dropdown',
-          label: 'Spreadsheet',
-          tooltip: 'Spreadsheet to adjust',
-          id: 'spreadsheet',
-          default: '',
-          choices: [
-            { label: 'Select Spreadsheet', id: '' },
-            ...instance.config.sheetIDs
-              .split(' ')
-              .map((id, index) => {
-                const spreadsheet = instance.data.sheetData.get(id)
-                if (!spreadsheet) return { label: '', id: '' }
-                return {
-                  label: spreadsheet.properties.title,
-                  id: instance.config.referenceIndex ? index.toString() : id,
-                }
-              })
-              .filter((x) => x.id !== ''),
-          ],
-        },
+        options.selectSpreadsheet(instance),
         {
           type: 'textinput',
           label: 'Sheet Name',
@@ -304,7 +170,7 @@ export function getActions(instance: GoogleSheetsInstance): GoogleSheetsActions 
         {
           type: 'dropdown',
           label: 'Type',
-          tooltip: 'Type to delete',
+          description: 'Type to delete',
           id: 'type',
           default: 'ROWS',
           choices: [
@@ -315,65 +181,64 @@ export function getActions(instance: GoogleSheetsInstance): GoogleSheetsActions 
         {
           type: 'textinput',
           label: 'Row Start',
-          tooltip: 'Starting Row Number',
+          description: 'Starting Row Number',
           id: 'rowStart',
           default: '',
           useVariables: true,
-          isVisible: (options) => options.type === 'ROWS',
+          isVisibleExpression: `$(options:type) === 'ROWS'`,
         },
         {
           type: 'textinput',
           label: 'Row Stop (non-inclusive)',
-          tooltip: 'Stop Row Number',
+          description: 'Stop Row Number',
           id: 'rowStop',
           default: '',
           useVariables: true,
-          isVisible: (options) => options.type === 'ROWS',
+          isVisibleExpression: `$(options:type) === 'ROWS'`,
         },
         {
           type: 'textinput',
           label: 'Column Start',
-          tooltip: 'Starting Column Letter or Number',
+          description: 'Starting Column Letter or Number',
           id: 'columnStart',
           default: '',
           useVariables: true,
-          isVisible: (options) => options.type === 'COLUMNS',
+          isVisibleExpression: `$(options:type) === 'COLUMNS'`,
         },
         {
           type: 'textinput',
           label: 'Column Stop (non-inclusive)',
-          tooltip: 'Stop Column Letter or Number',
+          description: 'Stop Column Letter or Number',
           id: 'columnStop',
           default: '',
           useVariables: true,
-          isVisible: (options) => options.type === 'COLUMNS',
+          isVisibleExpression: `$(options:type) === 'COLUMNS'`,
         },
       ],
-      callback: async (action, context) => {
+      callback: async (action) => {
         const spreadsheetID = instance.api.getSpreadsheetID(action.options.spreadsheet)
         if (spreadsheetID === null) return
 
-        const sheetName = await context.parseVariablesInString(action.options.sheet)
         let sheetId
 
         const sheetData = instance.data.sheetData.get(spreadsheetID)
         sheetData.sheets.forEach((sheet: any) => {
-          if (sheet?.properties?.title === sheetName) sheetId = sheet?.properties?.sheetId
+          if (sheet?.properties?.title === action.options.sheet) sheetId = sheet?.properties?.sheetId
         })
 
         if (sheetId === undefined) {
-          instance.log('warn', 'Invalid sheet name')
+          log.warn('Invalid sheet name')
           return
         }
 
         if (action.options.type === 'ROWS') {
-          const start = parseInt(await context.parseVariablesInString(action.options.rowStart))
-          const stop = parseInt(await context.parseVariablesInString(action.options.rowStop))
+          const start = parseInt(action.options.rowStart)
+          const stop = parseInt(action.options.rowStop)
 
           instance.api.deleteRowColumn(spreadsheetID, sheetId, action.options.type, start - 1, stop - 1)
         } else {
-          let start: string | number | null = await context.parseVariablesInString(action.options.columnStart)
-          let stop: string | number | null = await context.parseVariablesInString(action.options.columnStop)
+          let start: string | number | null = action.options.columnStart
+          let stop: string | number | null = action.options.columnStop
 
           if (isNaN(parseInt(start))) {
             start = colToIndex(start)
@@ -388,9 +253,9 @@ export function getActions(instance: GoogleSheetsInstance): GoogleSheetsActions 
           }
 
           if (start !== null && stop !== null && start < stop) {
-            instance.api.deleteRowColumn(spreadsheetID, sheetId, action.options.type, start, stop)
+            return instance.api.deleteRowColumn(spreadsheetID, sheetId, action.options.type, start, stop)
           } else {
-            instance.log('warn', 'Invalid start and stop indexes')
+            return log.warn('Invalid start and stop indexes')
           }
         }
       },
@@ -402,7 +267,7 @@ export function getActions(instance: GoogleSheetsInstance): GoogleSheetsActions 
         {
           type: 'dropdown',
           label: 'Spreadsheet',
-          tooltip: 'Spreadsheet to adjust',
+          description: 'Spreadsheet to adjust',
           id: 'spreadsheet',
           default: '',
           choices: [
@@ -423,7 +288,7 @@ export function getActions(instance: GoogleSheetsInstance): GoogleSheetsActions 
         {
           type: 'textinput',
           label: 'Original Sheet Name',
-          tooltip: 'Name for the sheet to be duplicated',
+          description: 'Name for the sheet to be duplicated',
           id: 'duplicateName',
           default: '',
           useVariables: true,
@@ -431,18 +296,18 @@ export function getActions(instance: GoogleSheetsInstance): GoogleSheetsActions 
         {
           type: 'textinput',
           label: 'New Sheet Name',
-          tooltip: 'Name for the new sheet',
+          description: 'Name for the new sheet',
           id: 'newName',
           default: '',
           useVariables: true,
         },
       ],
-      callback: async (action, context) => {
+      callback: async (action) => {
         const spreadsheetID = instance.api.getSpreadsheetID(action.options.spreadsheet)
         if (spreadsheetID === null) return
 
-        const duplicateName = await context.parseVariablesInString(action.options.duplicateName)
-        const newName = await context.parseVariablesInString(action.options.newName)
+        const duplicateName = action.options.duplicateName
+        const newName = action.options.newName
         const spreadsheet = instance.data.sheetData.get(spreadsheetID)
         if (!spreadsheet) return
 
@@ -451,9 +316,9 @@ export function getActions(instance: GoogleSheetsInstance): GoogleSheetsActions 
         })
 
         if (originalSheet) {
-          instance.api.duplicateSheet(spreadsheetID, originalSheet.properties.sheetId, newName, spreadsheet.sheets.length)
+          return instance.api.duplicateSheet(spreadsheetID, originalSheet.properties.sheetId, newName, spreadsheet.sheets.length)
         } else {
-          instance.log('warn', `Unable to find sheet ${duplicateName} to duplicate`)
+          return log.warn(`Unable to find sheet ${duplicateName} to duplicate`)
         }
       },
     },

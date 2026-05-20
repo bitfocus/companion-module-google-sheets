@@ -1,11 +1,12 @@
 import type { CompanionStaticUpgradeResult, CompanionStaticUpgradeScript } from '@companion-module/base'
-import type { Config } from './config'
+import type { Config } from './config.js'
 
 export const getUpgrades = (): CompanionStaticUpgradeScript<Config>[] => {
-  const upgradeV1_7_0: CompanionStaticUpgradeScript<Config> = (_context, props): CompanionStaticUpgradeResult<Config> => {
+  const upgradeV1_7_0: CompanionStaticUpgradeScript<Config> = (_context, props): CompanionStaticUpgradeResult<Config, undefined> => {
     const currentConfig = props.config
-    const changes: CompanionStaticUpgradeResult<Config> = {
+    const changes: CompanionStaticUpgradeResult<Config, undefined> = {
       updatedConfig: null,
+      updatedSecrets: null,
       updatedActions: [],
       updatedFeedbacks: [],
     }

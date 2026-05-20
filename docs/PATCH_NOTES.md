@@ -1,5 +1,8 @@
 # Path Notes
 
+**v2.0.0**
+- Updated for Companion API v2, allowing support for Expressions directly in most action/feedback options
+
 **v1.7.0**
 - Added separate config options for Action/Feedback options and Variables for referencing by index instead of ID
 - Fixed an issue with parsing spreadsheet IDs
