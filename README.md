@@ -1,8 +1,16 @@
-# companion-module-google-sheets
+# Companion Module - Google Sheets
 
-# Sponsorship
-If this module, or the others I work on such as vMix, Twitch, Discord, Google Sheets, or any of the tools I make publicly available, have been of benefit to your work in some way then please
-considering supporting the continued development of these modules by sponsoring me on GitHub https://github.com/sponsors/thedist/
+Module to handle the OAuth process for getting/setting data from Google Sheets and making accessible sheet cell values as Variables.
+
+# Sponsors
+
+This module, like Companion, will always be free and open source. Sponsorship helps make continued development and maintenance possible, not just for this module, but also for projects such as vMix, Google Sheets, Twitch, Discord, and more.
+
+If you'd like to support my work, you can sponsor me on [GitHub](https://github.com/sponsors/thedist), buy me a coffee on [Ko-fi](https://ko-fi.com/thedist), or subscribe on [Twitch](https://www.twitch.tv/subs/dist).
+
+**Sponsor Showcase**<br />
+<a href="https://cloudflexbroadcast.com/" target="_blank"><img src="https://avatars.githubusercontent.com/u/198860892" width="48" alt="CLOUDflex Broadcast"></a><br>
+<a href="https://cloudflexbroadcast.com/" target="_blank">CLOUDflex Broadcast</a><br>
 
 
 # HTTP API
