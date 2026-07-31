@@ -28,17 +28,18 @@ export default class GoogleSheetsInstance extends InstanceBase<InstanceTypes> {
   public destroying = false
   public readonly variables
   public config: Config = {
-    clientID: '',
-    clientSecret: '',
-    redirectURI: '',
-    code: '',
+    // clientID: '',
+    // clientSecret: '',
+    // redirectURI: '',
+    // code: '',
     sheetIDs: '',
     referenceIndex: false,
     referenceIndexVariables: false,
     pollInterval: 1.5,
-    clearTokens: false,
-    accessToken: null,
-    refreshToken: null,
+    // clearTokens: false,
+    // accessToken: null,
+    // refreshToken: null,
+    'oauth-test': null,
   }
   public data = {
     sheetData: new Map<string, any>(),
@@ -70,16 +71,18 @@ export default class GoogleSheetsInstance extends InstanceBase<InstanceTypes> {
    * @description triggered every time the config for this instance is saved
    */
   public async configUpdated(config: Config): Promise<void> {
-    this.config = config
-    if (this.config.clearTokens) {
-      this.config.accessToken = null
-      this.config.refreshToken = null
-      this.config.code = ''
-      this.config.clearTokens = false
+    console.log('configUpdated', config)
 
-      log.info('Clearing Access and Refresh Tokens')
-      this.saveConfig(this.config)
-    }
+    this.config = config
+    // if (this.config.clearTokens) {
+    //   this.config.accessToken = null
+    //   this.config.refreshToken = null
+    //   this.config.code = ''
+    //   this.config.clearTokens = false
+
+    //   log.info('Clearing Access and Refresh Tokens')
+    //   this.saveConfig(this.config)
+    // }
 
     await this.api.auth()
     if (this.api.pollAPIInterval) clearTimeout(this.api.pollAPIInterval)
@@ -96,7 +99,7 @@ export default class GoogleSheetsInstance extends InstanceBase<InstanceTypes> {
     log.debug(`Instance destroyed: ${this.id}`)
     this.destroying = true
     if (this.api.pollAPIInterval) clearTimeout(this.api.pollAPIInterval)
-    if (this.api.refreshTokenInterval) clearInterval(this.api.refreshTokenInterval)
+    // if (this.api.refreshTokenInterval) clearInterval(this.api.refreshTokenInterval)
   }
 
   /**

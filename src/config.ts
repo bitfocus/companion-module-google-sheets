@@ -1,23 +1,78 @@
-import type { SomeCompanionConfigField, JsonValue } from '@companion-module/base'
+import type { SomeCompanionConfigField, CompanionInputFieldBase } from '@companion-module/base'
 import type GoogleSheetsInstance from './index.js'
 
-export interface Config {
+export type SecretOAuthValue = {
+  /** Bearer token, already refreshed if it was near expiry */
+  accessToken: string
+  /** Scopes the provider actually granted — may be narrower than requested */
+  scope: string[]
+  /** ISO 8601 timestamp for when accessToken stops working */
+  expiry: string
+  /** Origin of the token endpoint, e.g. "https://oauth2.googleapis.com" */
+  oauthServerAddress: string
+}
+
+export type Config = {
   //
-  clientID: string
-  clientSecret: string
-  redirectURI: string
-  code: string
+  // clientID: string
+  // clientSecret: string
+  // redirectURI: string
+  // code: string
   sheetIDs: string
   referenceIndex: boolean
   referenceIndexVariables: boolean
   pollInterval: number
-  clearTokens: boolean
+  // clearTokens: boolean
 
-  accessToken: string | null
-  refreshToken: string | null
+  'oauth-test': SecretOAuthValue | null
 
-  [x: string]: JsonValue
+  // accessToken: string | null
+  // refreshToken: string | null
+
+  // [x: string]: JsonValue
 }
+
+type CompanionInputFieldSecretOAuth = Omit<CompanionInputFieldBase, 'type'> & {
+  type: 'secret-oauth'
+  width: number
+  parameters: SecretOAuthParameters
+}
+
+/** An expression evaluated against the connection config the first time an
+ *  authorization is started. Resolved once, then the result is stored. */
+export interface OAuthExpression {
+  expression: string
+}
+
+type OAuthProp<T> = T | OAuthExpression
+
+/** Who supplies the OAuth client registration. Use `user` unless your vendor has
+ *  registered one public application for everyone. Never an expression. */
+export type SecretOAuthClient = { _tag: 'module'; clientId: string; clientSecret?: string } | { _tag: 'user' }
+
+interface SecretOAuthFlowCommon {
+  client: SecretOAuthClient
+  tokenUrl: OAuthProp<string>
+  scope?: OAuthProp<string | readonly string[]>
+  extraTokenParameters?: Record<string, OAuthProp<string>>
+  /** Fallback when the provider omits `expires_in`. Literal only. */
+  defaultExpirySeconds?: number
+  /** Defaults to `form` (RFC 6749). Only set `json` if the provider demands it. */
+  tokenRequestFormat?: 'form' | 'json'
+}
+
+export type SecretOAuthParameters =
+  | (SecretOAuthFlowCommon & {
+      _tag: 'authorization-code'
+      authorizationUrl: OAuthProp<string>
+      extraAuthorizationParameters?: Record<string, OAuthProp<string>>
+    })
+  | (SecretOAuthFlowCommon & {
+      _tag: 'device-code'
+      deviceAuthorizationUrl: OAuthProp<string>
+      extraAuthorizationParameters?: Record<string, OAuthProp<string>>
+    })
+  | (SecretOAuthFlowCommon & { _tag: 'client-credentials' })
 
 export const getConfigFields = (instance: GoogleSheetsInstance): SomeCompanionConfigField[] => {
   return [
@@ -41,33 +96,54 @@ export const getConfigFields = (instance: GoogleSheetsInstance): SomeCompanionCo
 				`,
     },
     {
-      type: 'textinput',
-      label: 'Client ID',
-      id: 'clientID',
+      type: 'secret-oauth',
+      id: 'oauth-test',
+      label: 'OAuth Test',
       width: 12,
-      default: '',
-    },
-    {
-      type: 'textinput',
-      label: 'Client Secret',
-      id: 'clientSecret',
-      width: 12,
-      default: '',
-    },
-    {
-      type: 'textinput',
-      label: 'Redirect URI',
-      id: 'redirectURI',
-      width: 12,
-      default: '',
-    },
-    {
-      type: 'textinput',
-      label: 'OAuth Code',
-      id: 'code',
-      width: 12,
-      default: '',
-    },
+      parameters: {
+        _tag: 'authorization-code',
+        client: { _tag: 'user' },
+        tokenUrl: 'https://oauth2.googleapis.com/token',
+        extraTokenParameters: {
+          grant_type: 'authorization_code',
+        },
+        scope: 'https://www.googleapis.com/auth/spreadsheets',
+        authorizationUrl: 'https://accounts.google.com/o/oauth2/v2/auth',
+        extraAuthorizationParameters: {
+          prompt: 'consent',
+          access_type: 'offline',
+        },
+        // const oauthURL = `response_type=code&prompt=consent&access_type=offline`
+      },
+    } satisfies CompanionInputFieldSecretOAuth as any,
+    // {
+    //   type: 'textinput',
+    //   label: 'Client ID',
+    //   id: 'clientID',
+    //   width: 12,
+    //   default: '',
+    // },
+    // {
+    //   type: 'textinput',
+    //   label: 'Client Secret',
+    //   id: 'clientSecret',
+    //   width: 12,
+    //   default: '',
+    // },
+    // {
+    //   type: 'textinput',
+    //   label: 'Redirect URI',
+    //   id: 'redirectURI',
+    //   width: 12,
+    //   default: '',
+    // },
+    // {
+    //   type: 'textinput',
+    //   label: 'OAuth Code',
+    //   id: 'code',
+    //   width: 12,
+    //   default: '',
+    // },
     {
       type: 'textinput',
       label: 'Spreadsheet IDs (space separated)',
@@ -107,12 +183,12 @@ export const getConfigFields = (instance: GoogleSheetsInstance): SomeCompanionCo
       max: 86400,
       step: 0.1,
     },
-    {
-      type: 'checkbox',
-      label: 'Clear existing OAuth tokens',
-      id: 'clearTokens',
-      width: 12,
-      default: false,
-    },
+    // {
+    //   type: 'checkbox',
+    //   label: 'Clear existing OAuth tokens',
+    //   id: 'clearTokens',
+    //   width: 12,
+    //   default: false,
+    // },
   ]
 }

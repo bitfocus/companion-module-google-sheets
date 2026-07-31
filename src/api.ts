@@ -43,16 +43,24 @@ export class API {
     write: Array(60).fill(0),
   }
   private ready = false
-  public refreshTokenInterval: ReturnType<typeof setInterval> = setInterval(() => {
-    this.refreshToken()
-  }, 3000000)
+  // Companion now keeps the token fresh, so the module doesn't need its own refresh timer
+  // public refreshTokenInterval: ReturnType<typeof setInterval> = setInterval(() => {
+  //   this.refreshToken()
+  // }, 3000000)
   public spreadsheetIndexToID: string[] = []
+
+  /**
+   * @description Access token supplied by the Companion managed OAuth config field, already refreshed if needed
+   */
+  private get accessToken(): string | null {
+    return this.instance.config['oauth-test']?.accessToken ?? null
+  }
 
   /**
    * @description API request to create a sheet
    */
   public addSheet = async (spreadsheet: string, sheetName: string): Promise<void> => {
-    const url = `https://sheets.googleapis.com/v4/spreadsheets/${spreadsheet}:batchUpdate?access_token=${this.instance.config.accessToken}`
+    const url = `https://sheets.googleapis.com/v4/spreadsheets/${spreadsheet}:batchUpdate?access_token=${this.accessToken}`
 
     const body = {
       requests: [
@@ -106,7 +114,7 @@ export class API {
    */
   public adjustCell = async (spreadsheet: string, cell: string, value: string): Promise<void> => {
     if (!this.ready || !this.instance.config.sheetIDs) return
-    const url = `https://sheets.googleapis.com/v4/spreadsheets/${spreadsheet}/values/${encodeURIComponent(cell)}?access_token=${this.instance.config.accessToken}&valueInputOption=USER_ENTERED`
+    const url = `https://sheets.googleapis.com/v4/spreadsheets/${spreadsheet}/values/${encodeURIComponent(cell)}?access_token=${this.accessToken}&valueInputOption=USER_ENTERED`
 
     const body = {
       range: cell,
@@ -138,7 +146,7 @@ export class API {
 
   public clearSheet = async (spreadsheet: string, sheet: number): Promise<void> => {
     if (!this.ready || !this.instance.config.sheetIDs) return
-    const url = `https://sheets.googleapis.com/v4/spreadsheets/${spreadsheet}:batchUpdate?access_token=${this.instance.config.accessToken}`
+    const url = `https://sheets.googleapis.com/v4/spreadsheets/${spreadsheet}:batchUpdate?access_token=${this.accessToken}`
 
     const body = {
       requests: [
@@ -181,7 +189,7 @@ export class API {
 
   public deleteRowColumn = async (spreadsheet: string, sheet: number, type: 'ROWS' | 'COLUMNS', start: number, stop: number): Promise<void> => {
     if (!this.ready || !this.instance.config.sheetIDs) return
-    const url = `https://sheets.googleapis.com/v4/spreadsheets/${spreadsheet}:batchUpdate?access_token=${this.instance.config.accessToken}`
+    const url = `https://sheets.googleapis.com/v4/spreadsheets/${spreadsheet}:batchUpdate?access_token=${this.accessToken}`
 
     const body = {
       requests: [
@@ -226,7 +234,7 @@ export class API {
    * @description API request to duplicate a sheet
    */
   public duplicateSheet = async (spreadsheet: string, originalSheet: number, newSheet: string, index: number): Promise<void> => {
-    const url = `https://sheets.googleapis.com/v4/spreadsheets/${spreadsheet}:batchUpdate?access_token=${this.instance.config.accessToken}`
+    const url = `https://sheets.googleapis.com/v4/spreadsheets/${spreadsheet}:batchUpdate?access_token=${this.accessToken}`
 
     const body = {
       requests: [
@@ -264,88 +272,103 @@ export class API {
   }
 
   /**
-   * @description Attempts to authenticate with Google OAuth
+   * @description Checks that Companion has supplied an OAuth token for this connection
    */
   public auth = async (): Promise<boolean> => {
     this.instance.updateStatus(InstanceStatus.Connecting, 'Authenticating')
 
-    if (await this.refreshToken()) return true
-    if (await this.codeExchange()) return true
-    return false
+    // The Auth Code exchange and token refreshing are now handled by Companions OAuth config field
+    // if (await this.refreshToken()) return true
+    // if (await this.codeExchange()) return true
+    // return false
+
+    if (!this.accessToken) {
+      this.ready = false
+      this.instance.updateStatus(InstanceStatus.BadConfig, 'Not Authorized')
+      log.debug('No OAuth token available')
+      return false
+    }
+
+    log.debug(`OAuth token expires ${this.instance.config['oauth-test']?.expiry}`)
+    this.ready = true
+    this.instance.updateStatus(InstanceStatus.Ok)
+    this.pollAPI()
+
+    return true
   }
 
-  /**
-   * @description Exchanges the code from the Auth Code flow for an Access Token and Refresh Token pair, and saves them to config
-   */
-  private codeExchange = async (): Promise<boolean> => {
-    if (!this.instance.config.code) return false
+  // /**
+  //  * @description Exchanges the code from the Auth Code flow for an Access Token and Refresh Token pair, and saves them to config
+  //  */
+  // private codeExchange = async (): Promise<boolean> => {
+  //   if (!this.instance.config.code) return false
 
-    const searchParams = new URLSearchParams([
-      ['code', this.instance.config.code],
-      ['client_id', this.instance.config.clientID],
-      ['client_secret', this.instance.config.clientSecret],
-      ['redirect_uri', this.instance.config.redirectURI],
-      ['grant_type', 'authorization_code'],
-    ]).toString()
+  //   const searchParams = new URLSearchParams([
+  //     ['code', this.instance.config.code],
+  //     ['client_id', this.instance.config.clientID],
+  //     ['client_secret', this.instance.config.clientSecret],
+  //     ['redirect_uri', this.instance.config.redirectURI],
+  //     ['grant_type', 'authorization_code'],
+  //   ]).toString()
 
-    log.debug(`Attempting to exchange Code for Token - ${this.instance.config.code}`)
+  //   log.debug(`Attempting to exchange Code for Token - ${this.instance.config.code}`)
 
-    return fetch(`https://oauth2.googleapis.com/token?${searchParams}`, { method: 'POST' })
-      .then(async (res) => res.json())
-      .then((res: any) => {
-        log.debug(`Exchanged code - ${JSON.stringify(res)}`)
-        this.instance.updateStatus(InstanceStatus.Ok)
+  //   return fetch(`https://oauth2.googleapis.com/token?${searchParams}`, { method: 'POST' })
+  //     .then(async (res) => res.json())
+  //     .then((res: any) => {
+  //       log.debug(`Exchanged code - ${JSON.stringify(res)}`)
+  //       this.instance.updateStatus(InstanceStatus.Ok)
 
-        this.instance.config.accessToken = res.access_token
-        this.instance.config.refreshToken = res.refresh_token
-        this.instance.config.code = ''
-        this.ready = true
-        this.instance.saveConfig(this.instance.config)
+  //       this.instance.config.accessToken = res.access_token
+  //       this.instance.config.refreshToken = res.refresh_token
+  //       this.instance.config.code = ''
+  //       this.ready = true
+  //       this.instance.saveConfig(this.instance.config)
 
-        return true
-      })
-      .catch((err) => {
-        this.instance.updateStatus(InstanceStatus.UnknownError, `Error exchanging code`)
-        log.warn(`Error exchanging code - ${err.message}`)
-        this.instance.saveConfig({ ...this.instance.config, code: '' })
+  //       return true
+  //     })
+  //     .catch((err) => {
+  //       this.instance.updateStatus(InstanceStatus.UnknownError, `Error exchanging code`)
+  //       log.warn(`Error exchanging code - ${err.message}`)
+  //       this.instance.saveConfig({ ...this.instance.config, code: '' })
 
-        return false
-      })
-  }
+  //       return false
+  //     })
+  // }
 
-  /**
-   * @description Refreshes a Google OAuth token using app credentials
-   */
-  private refreshToken = async (): Promise<boolean> => {
-    if (!this.instance.config.clientID || !this.instance.config.clientSecret || !this.instance.config.refreshToken) return false
+  // /**
+  //  * @description Refreshes a Google OAuth token using app credentials
+  //  */
+  // private refreshToken = async (): Promise<boolean> => {
+  //   if (!this.instance.config.clientID || !this.instance.config.clientSecret || !this.instance.config.refreshToken) return false
 
-    log.debug(`Attempting to refresh token - ${this.instance.config.refreshToken}`)
+  //   log.debug(`Attempting to refresh token - ${this.instance.config.refreshToken}`)
 
-    const searchParams = new URLSearchParams([
-      ['client_id', this.instance.config.clientID],
-      ['client_secret', this.instance.config.clientSecret],
-      ['refresh_token', this.instance.config.refreshToken],
-      ['grant_type', 'refresh_token'],
-    ]).toString()
+  //   const searchParams = new URLSearchParams([
+  //     ['client_id', this.instance.config.clientID],
+  //     ['client_secret', this.instance.config.clientSecret],
+  //     ['refresh_token', this.instance.config.refreshToken],
+  //     ['grant_type', 'refresh_token'],
+  //   ]).toString()
 
-    return fetch(`https://oauth2.googleapis.com/token?${searchParams}`, { method: 'POST' })
-      .then(async (res) => res.json())
-      .then((res: any) => {
-        log.debug(`Token Refreshed - ${JSON.stringify(res)}`)
-        this.instance.updateStatus(InstanceStatus.Ok)
+  //   return fetch(`https://oauth2.googleapis.com/token?${searchParams}`, { method: 'POST' })
+  //     .then(async (res) => res.json())
+  //     .then((res: any) => {
+  //       log.debug(`Token Refreshed - ${JSON.stringify(res)}`)
+  //       this.instance.updateStatus(InstanceStatus.Ok)
 
-        this.instance.config.accessToken = res.access_token
-        this.ready = true
-        this.instance.saveConfig(this.instance.config)
-        this.pollAPI()
+  //       this.instance.config.accessToken = res.access_token
+  //       this.ready = true
+  //       this.instance.saveConfig(this.instance.config)
+  //       this.pollAPI()
 
-        return true
-      })
-      .catch((err) => {
-        log.error(err.message)
-        return false
-      })
-  }
+  //       return true
+  //     })
+  //     .catch((err) => {
+  //       log.error(err.message)
+  //       return false
+  //     })
+  // }
 
   /**
    * @param sheetID Spreadsheet ID
@@ -392,7 +415,7 @@ export class API {
      */
     const getSheet = async (id: string): Promise<void> => {
       this.rateLimit.incrementRequest('read')
-      const url = `https://sheets.googleapis.com/v4/spreadsheets/${id}?access_token=${this.instance.config.accessToken}`
+      const url = `https://sheets.googleapis.com/v4/spreadsheets/${id}?access_token=${this.accessToken}`
 
       return fetch(url)
         .then(async (res) => res.json())
@@ -428,7 +451,7 @@ export class API {
 
       // Surround title in single quote to prevent Google mistaking Title for Cell
       const individualSheets = sheet.sheets.map((doc: any) => `'${encodeURIComponent(doc.properties.title)}'`)
-      const url = `https://sheets.googleapis.com/v4/spreadsheets/${id}/values:batchGet?access_token=${this.instance.config.accessToken}&ranges=${individualSheets.join('&ranges=')}`
+      const url = `https://sheets.googleapis.com/v4/spreadsheets/${id}/values:batchGet?access_token=${this.accessToken}&ranges=${individualSheets.join('&ranges=')}`
 
       return fetch(url)
         .then(async (res) => res.json())
