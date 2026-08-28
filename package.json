@@ -44,7 +44,7 @@
 		"@json2csv/plainjs": "^7.0.6"
 	},
 	"devDependencies": {
-		"@companion-module/tools": "^3.0.0",
+		"@companion-module/tools": "^3.1.0",
 		"@types/jest": "29.5.14",
 		"@types/node": "22.9.0",
 		"@types/node-fetch": "^2.6.12",
