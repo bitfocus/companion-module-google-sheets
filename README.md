@@ -8,14 +8,9 @@ This module, like Companion, will always be free and open source. Sponsorship he
 
 If you'd like to support my work, you can sponsor me on [GitHub](https://github.com/sponsors/thedist), buy me a coffee on [Ko-fi](https://ko-fi.com/thedist), or subscribe on [Twitch](https://www.twitch.tv/subs/dist).
 
-**Sponsor Showcase**<br />
-<a href="https://cloudflexbroadcast.com/" target="_blank"><img src="https://avatars.githubusercontent.com/u/198860892" width="48" alt="CLOUDflex Broadcast"></a><br>
-<a href="https://cloudflexbroadcast.com/" target="_blank">CLOUDflex Broadcast</a><br>
-
 
 # HTTP API
 This module now supports Companions HTTP API, providing endpoints that can be used by 3rd party applications, for example as a Data Source in vMix. Information on the API endpoints is available in [docs/HTTP_API.md](./docs/HTTP_API.md)
-
 
 
 # Recent Patches
