@@ -58,7 +58,6 @@ export default class GoogleSheetsInstance extends InstanceBase<InstanceTypes> {
    * @description triggered on instance being enabled
    */
   public async init(config: Config): Promise<void> {
-    console.log(123)
     this.config = config
     this.updateInstance()
 
