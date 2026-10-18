@@ -110,3 +110,18 @@ export const cellToIndex = (cell: string): { col: number; row: number } | null =
 
   return { row, col }
 }
+
+/**
+ * @param id Variable ID
+ * @param replacements Object containing keys and the values they will be replaced with
+ * @returns sanitized ID
+ */
+export const sanitizeVariable = (id: string, replacements: Record<string, string> = {}): string => {
+  let result = id
+
+  for (const [character, replacement] of Object.entries(replacements)) {
+    result = result.split(character).join(replacement)
+  }
+
+  return result.replace(/[^a-zA-Z0-9-_.!]/g, '')
+}

@@ -1,6 +1,6 @@
 import type { CompanionVariableDefinitions } from '@companion-module/base'
 import type GoogleSheetsInstance from './index.js'
-import { columnIndexToLetter } from './utils.js'
+import { columnIndexToLetter, sanitizeVariable } from './utils.js'
 
 export type VariablesSchema = {
   read_requests: number
@@ -32,7 +32,9 @@ export class Variables {
     }
 
     this.instance.data.sheetValues.forEach((spreadsheet, id) => {
-      const title: string | number = this.instance.config.referenceIndexVariables ? this.instance.config.sheetIDs.split(' ').indexOf(id) : spreadsheet.properties.title
+      let title: string | number = this.instance.config.referenceIndexVariables ? this.instance.config.sheetIDs.split(' ').indexOf(id) : spreadsheet.properties.title
+      title = sanitizeVariable(title + '', { ' ': '_' })
+
       definitions[`${title}_id`] = { name: `Spreadsheet ${title} ID` }
 
       if (this.instance.config.referenceIndexVariables) {
@@ -47,8 +49,7 @@ export class Variables {
 
       spreadsheet.valueRanges?.forEach((valueRange: any) => {
         let sheetName = valueRange.range.split('!')[0]
-        if (sheetName.startsWith(`'`) && sheetName.endsWith(`'`)) sheetName = sheetName.slice(1, -1)
-        sheetName = sheetName.replace(/#/g, '')
+        sheetName = sanitizeVariable(sheetName, { ' ': '_' })
 
         const rowCount = valueRange?.values?.length || 0
         let columnCount = 0
@@ -86,7 +87,8 @@ export class Variables {
     }
 
     this.instance.data.sheetValues.forEach((spreadsheet, id) => {
-      const title: string = this.instance.config.referenceIndexVariables ? this.instance.config.sheetIDs.split(' ').indexOf(id) : spreadsheet.properties.title
+      let title: string = this.instance.config.referenceIndexVariables ? this.instance.config.sheetIDs.split(' ').indexOf(id) : spreadsheet.properties.title
+      title = sanitizeVariable(title + '', { ' ': '_' })
       variables[`${title}_id`] = spreadsheet.spreadsheetId
 
       if (this.instance.config.referenceIndexVariables) {
@@ -101,8 +103,7 @@ export class Variables {
 
       spreadsheet.valueRanges?.forEach((valueRange: any) => {
         let sheetName = valueRange.range.split('!')[0]
-        if (sheetName.startsWith(`'`) && sheetName.endsWith(`'`)) sheetName = sheetName.slice(1, -1)
-        sheetName = sheetName.replace(/#/g, '')
+        sheetName = sanitizeVariable(sheetName, { ' ': '_' })
 
         const rowCount = valueRange?.values?.length || 0
         let columnCount = 0

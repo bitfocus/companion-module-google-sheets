@@ -12,6 +12,11 @@ To authenticate with Google so that the module has the ability to read/write to 
 
 Due to every single cell having an associated variable within Companion it's not viable to have them all listed in the Variables list as this could potentially be hundreds of thousands, maybe even millions, of variables which would be unwieldly. To handle this, each sheet of every spreadsheet will have the variable listed for cell A1, this can then me used as a template where you change A1 to whatever cell you wish to get data from as while these other cells may not show in the variable list there will be data for them.
 
+**Variable IDs**<br />
+In most cases variables for cells will take the form of `$(label:SPREADSHEET_SHEET!CELL)`. So for example if you name your connection to Google Sheets in Companion `sheets`, and you have a Spreadsheet named `tournament`, and that has a sheet inside it called `players`, then you could access A1 with `$(sheets:tournament_players!A1)`, or any other cell using similar naming (the variable list just shows A1 for each sheet as listing potentially tens/hundreds of thousands of cells would slow performance, but they are all available to be utilized).
+
+One key thing to note is that Companion has strict naming requirements when it comes to variables, as such spaces in sheet names will be replaced by an underscore `_`, and other special characters may be omitted entirely, so it is recommended when designing your Google Sheet that you follow common best practices and avoid using special characters entirely in both Spreadsheet and sheet names.
+
 **Data Source**<br />
 This module can act as a Data Source for other services, such as vMix, by acting as a HTTP server. The benefit of this is that unfortunately vMix's native integration with Google Sheets is improper and burns through ratelimit needlessly resulting in slower polling and more frequently 429 ratelimit exceeded errors, where as by using this module as a data source you can poll more frequently and have vMix (or other app) poll this module rather than Google.
 

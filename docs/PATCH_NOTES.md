@@ -1,5 +1,8 @@
 # Path Notes
 
+**v3.0.0**
+- Updated for upcoming Companion requirements to be more strict on Variable IDs. All spaces in Spreadsheet names, or individual Sheet names, will be replaced by an underscore, and characters other than a-z, 0-9, -, _, or !, will be omitted.
+
 **v2.0.0**
 - Updated for Companion API v2, allowing support for Expressions directly in most action/feedback options
 
