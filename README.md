@@ -14,6 +14,9 @@ This module now supports Companions HTTP API, providing endpoints that can be us
 
 
 # Recent Patches
+**v3.0.1**
+- Changes to how variables are processed to improve performance in some situations
+
 **v3.0.0**
 - Updated for upcoming Companion requirements to be more strict on Variable IDs. All spaces in Spreadsheet names, or individual Sheet names, will be replaced by an underscore, and characters other than a-z, 0-9, `-`, `_`, `.`, or `!`, will be omitted.
 

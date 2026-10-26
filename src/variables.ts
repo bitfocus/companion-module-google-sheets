@@ -148,8 +148,8 @@ export class Variables {
       if (newValues[key] === undefined) valueChanges[key] = undefined
     })
 
-    if (Object.keys(newValues).length > 0) {
-      this.instance.setVariableValues(newValues)
+    if (Object.keys(valueChanges).length > 0) {
+      this.instance.setVariableValues(valueChanges)
       this.currentValues = newValues
     }
   }
