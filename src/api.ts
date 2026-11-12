@@ -43,7 +43,7 @@ export class API {
     write: Array(60).fill(0),
   }
   private ready = false
-  public refreshTokenInterval: ReturnType<typeof setInterval> = setInterval(() => {
+  public refreshTokenInterval: ReturnType<typeof setTimeout> = setTimeout(() => {
     this.refreshToken()
   }, 3000000)
   public spreadsheetIndexToID: string[] = []
@@ -69,7 +69,7 @@ export class API {
       responseIncludeGridData: false,
     }
 
-    log.debug(`Attempting to Add Sheet: ${JSON.stringify(body)}`)
+    log.debug(`addSheet: ${url} - ${JSON.stringify(body)}`)
 
     fetch(url, { method: 'POST', body: JSON.stringify(body) })
       .then(async (res) => res.json())
@@ -88,12 +88,12 @@ export class API {
         }
       })
       .catch((err) => {
-        let body = err?.response?.body
+        let errBody = err?.response?.err
 
         try {
-          body = JSON.parse(body)
-          log.warn(body.error.message)
-          log.debug(JSON.stringify(body))
+          errBody = JSON.parse(errBody)
+          log.warn(errBody.error.message)
+          log.debug(JSON.stringify(errBody))
         } catch (e) {
           log.warn(`API Error - Unable to parse response`)
           log.debug(`${e}`)
@@ -114,6 +114,7 @@ export class API {
     }
 
     log.debug(`Adjusting Sheet: ${spreadsheet} Cell: ${cell} Value: ${value}`)
+    log.debug(`adjustCell: ${url} - ${JSON.stringify(body)}`)
 
     fetch(url, { method: 'PUT', body: JSON.stringify(body) })
       .then(async (res) => res.json())
@@ -159,6 +160,7 @@ export class API {
     }
 
     log.debug(`Attempting to Clear Sheet: ${spreadsheet} Sheet: ${sheet}`)
+    log.debug(`clearSheet: ${url} - ${JSON.stringify(body)}`)
 
     return fetch(url, options)
       .then(async (res) => res.json())
@@ -203,6 +205,8 @@ export class API {
       body: JSON.stringify(body),
     }
 
+    log.debug(`deleteRowColumn: ${url} - ${JSON.stringify(body)}`)
+
     return fetch(url, options)
       .then(async (res) => res.json())
       .then((res: any) => {
@@ -217,7 +221,6 @@ export class API {
         }
       })
       .catch((err) => {
-        log.debug(`deleteRowColumn err: ${err.message} - url: ${url}`)
         if (err.message.includes('429')) this.rateLimit.incrementRequest('exceeded')
       })
   }
@@ -242,6 +245,8 @@ export class API {
       responseRanges: [],
       responseIncludeGridData: false,
     }
+
+    log.debug(`duplicateSheet: ${url} - ${JSON.stringify(body)}`)
 
     fetch(url, { method: 'POST', body: JSON.stringify(body) })
       .then(async (res) => res.json())
@@ -306,7 +311,8 @@ export class API {
       })
       .catch((err) => {
         this.instance.updateStatus(InstanceStatus.UnknownError, `Error exchanging code`)
-        log.warn(`Error exchanging code - ${err.message}`)
+        log.warn(`Error exchanging code - ${err.message ? err.message : err}`)
+        log.debug(`Code exchange request: https://oauth2.googleapis.com/token?${searchParams}`)
         this.instance.saveConfig({ ...this.instance.config, code: '' })
 
         return false
@@ -317,7 +323,14 @@ export class API {
    * @description Refreshes a Google OAuth token using app credentials
    */
   private refreshToken = async (): Promise<boolean> => {
-    if (!this.instance.config.clientID || !this.instance.config.clientSecret || !this.instance.config.refreshToken) return false
+    if (!this.instance.config.clientID || !this.instance.config.clientSecret || !this.instance.config.refreshToken) {
+      const clientID = this.instance.config.clientID ? this.instance.config.clientID : 'MISSING'
+      const clientSecret = this.instance.config.clientSecret ? this.instance.config.clientSecret : 'MISSING'
+      const refreshToken = this.instance.config.refreshToken ? this.instance.config.refreshToken : 'MISSING'
+
+      log.warn(`Unable to Refresh token, missing required credentials - ClientID: ${clientID} - Client Secret: ${clientSecret} - Refresh Token: ${refreshToken}`)
+      return false
+    }
 
     log.debug(`Attempting to refresh token - ${this.instance.config.refreshToken}`)
 
@@ -339,10 +352,20 @@ export class API {
         this.instance.saveConfig(this.instance.config)
         this.pollAPI()
 
+        this.refreshTokenInterval = setTimeout(() => {
+          this.refreshToken()
+        }, 3000000)
+
         return true
       })
       .catch((err) => {
-        log.error(err.message)
+        log.error(err.message ? err.message : err)
+        log.debug(`Refresh token request: https://oauth2.googleapis.com/token?${searchParams}`)
+
+        this.refreshTokenInterval = setTimeout(() => {
+          this.refreshToken()
+        }, 5000)
+
         return false
       })
   }
@@ -393,6 +416,7 @@ export class API {
     const getSheet = async (id: string): Promise<void> => {
       this.rateLimit.incrementRequest('read')
       const url = `https://sheets.googleapis.com/v4/spreadsheets/${id}?access_token=${this.instance.config.accessToken}`
+      log.debug(`getSheet: ${url}`)
 
       return fetch(url)
         .then(async (res) => res.json())
@@ -411,7 +435,7 @@ export class API {
           }
         })
         .catch((err) => {
-          log.debug(`getSheet err: ${err.message}`)
+          log.debug(`getSheet err: ${err.message ? err.message : err}`)
           if (err.message.includes('429')) this.rateLimit.incrementRequest('exceeded')
           return
         })
@@ -429,6 +453,8 @@ export class API {
       // Surround title in single quote to prevent Google mistaking Title for Cell
       const individualSheets = sheet.sheets.map((doc: any) => `'${encodeURIComponent(doc.properties.title)}'`)
       const url = `https://sheets.googleapis.com/v4/spreadsheets/${id}/values:batchGet?access_token=${this.instance.config.accessToken}&ranges=${individualSheets.join('&ranges=')}`
+
+      log.debug(`getSheetValues: ${url}`)
 
       return fetch(url)
         .then(async (res) => res.json())
@@ -452,7 +478,7 @@ export class API {
           }
         })
         .catch((err) => {
-          log.debug(`getSheetValues err: ${err.message} - url: ${url}`)
+          log.debug(`getSheetValues err: ${err.message ? err.message : err}`)
           if (err.message.includes('429')) this.rateLimit.incrementRequest('exceeded')
         })
     }
